@@ -13,7 +13,7 @@ mw_001_load_ww = function() {
   # load raw data ----
   raw_ww = readRDS(fs::path(paste0(ldate,"_ww_data/COVID19Wastewater_vl.rds")))
   ara_supp = readRDS(fs::path(paste0(ldate,"_ww_data/ara_supp_tbl.rds"))) %>% 
-    dplyr::mutate(ara_n=as.factor(row_number()),
+    dplyr::mutate(ara_n=row_number(),
                   lab_n=as.factor(as.numeric(as.factor(lab))))
   ara_methods = readRDS(fs::path(paste0(ldate,"_ww_data/ara_method_change_dates.rds")))
   
@@ -42,8 +42,8 @@ mw_001_load_ww = function() {
                   method=if_else(is.na(method),0,method)) %>% 
     # add indicator for missing/
     dplyr::mutate(measurement=if_else(is.na(conc),0,1)) %>%
-    # remove strange values in Liechtenstein 
-    dplyr::filter(ara_id!="100000") %>%
+    # remove Liechtenstein (strange values and not CH) and Ramsen (mostly in Germany)
+    dplyr::filter(ara_id!="100000", ara_id!="296300") %>%
     dplyr::ungroup()
   return(ww)
 }
