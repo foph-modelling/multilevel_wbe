@@ -38,10 +38,9 @@ rmarkdown::render("R/mw_200_data_description.R",
                   output_file="../reports/data_description.html")
 
 # model development
-rmarkdown::render("R/mw_201_model_dev_A.R",
+rmarkdown::render("mw_201_model_dev_A.R",
                   params=list(controls=controls),
                   output_file="../reports/model_dev_A.html")
 
 
-# Block 3: models ----
 

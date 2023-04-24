@@ -40,4 +40,4 @@ qsum_range = function(x) {
 
 # aesthetics ----
 theme_set(theme_bw())
-cust_cols = c("dodgerblue","firebrick2")
+cust_cols = c("dodgerblue","firebrick2","goldenrod2")
