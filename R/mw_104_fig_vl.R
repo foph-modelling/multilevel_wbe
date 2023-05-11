@@ -17,6 +17,7 @@ mw_104_fig_vl = function(ww,lower_limit=0) {
     theme(axis.text = element_text(size=5)) +
     labs(x="Week",
          y="ARA",
-         fill="Mean viral load")
+         fill="Mean viral load") +
+    geom_vline(xintercept=ymd(controls$period_dates),linetype=2)
   return(g)
 }
