@@ -7,13 +7,13 @@
 #' output:
 #'    html_document:
 #'      code_folding : hide
-#' toc: true
-#' toc_float: true
-#' toc_depth: 4
-#' number_sections: true
-#' highlight: pygments
-#' theme: cosmo
-#' link-citations: true
+#'      toc: true
+#'      toc_float: true
+#'      toc_depth: 4
+#'      number_sections: true
+#'      highlight: pygments
+#'      theme: cosmo
+#'      link-citations: true
 #' ---
 
 
