@@ -7,15 +7,6 @@
 #' output:
 #'    html_document:
 #'      code_folding : hide
-<<<<<<< HEAD
-#' toc: true
-#' toc_float: true
-#' toc_depth: 4
-#' number_sections: true
-#' highlight: pygments
-#' theme: cosmo
-#' link-citations: true
-=======
 #'      toc: true
 #'      toc_float: true
 #'      toc_depth: 4
@@ -23,7 +14,6 @@
 #'      highlight: pygments
 #'      theme: cosmo
 #'      link-citations: true
->>>>>>> gh-pages
 #' ---
 
 
@@ -32,10 +22,7 @@
 source("setup.R")
 # load data
 ww1 = readRDS(fs::path("../",controls$savepoint,"ww1.rds"))
-<<<<<<< HEAD
-=======
 shapes = readRDS(fs::path("../",controls$savepoint,"shapes.rds"))
->>>>>>> gh-pages
 
 #' We use measurements of SARS-CoV-2 concentration in wastewater from multiple ARAs in Switzerland in 2022 and 2023. Viral concentration (*C*, unit: gene copies [gc] per liter) is transformed into viral load (*V*; unit: gc per day per 100,000) using the flow of wastewater on the same day (*F*) and the size of the population covered (*P*):
 #' $$
@@ -56,15 +43,6 @@ mw_100_desc_table(ww1) %>%
 mw_101_fig_missing(ww1)
 #' **Figure 1.** Available measurements over time by ARA (grouped by canton).
 
-<<<<<<< HEAD
-#+ fig.width=8, fig.height=10
-mw_103_fig_detect(ww1,detect_limit=0)
-#' **Figure 2.** SARS-CoV-2 detection in wastewater over time by ARA (limit=0).
-
-#+ fig.width=8, fig.height=10
-mw_104_fig_vl(ww1,lower_limit=5000)
-#' **Figure 3.** Weekly mean SARS-CoV-2 viral load in wastewater by ARA (removing one outlier below 5,000).
-=======
 #+ fig.width=8, fig.height=6
 mw_110_map_missing(ww1,shapes)
 #' **Figure 2.** Total measurements by ARA.
@@ -102,5 +80,4 @@ if(FALSE) {
     coord_flip() +
   theme(axis.text = element_text(size=5))
 }
->>>>>>> gh-pages
 

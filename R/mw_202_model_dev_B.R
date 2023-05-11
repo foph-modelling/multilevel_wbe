@@ -7,35 +7,19 @@
 #' output:
 #'    html_document:
 #'      code_folding : hide
-#' toc: true
-#' toc_float: true
-#' toc_depth: 4
-#' number_sections: true
-#' highlight: pygments
-#' theme: cosmo
-#' link-citations: true
+#'      toc: true
+#'      toc_float: true
+#'      toc_depth: 4
+#'      number_sections: true
+#'      highlight: pygments
+#'      theme: cosmo
+#'      link-citations: true
 #' ---
 
 
 #+ results="hide", warnings="false", echo="false"
 source("setup.R")
 ww1 = readRDS(fs::path("../",controls$savepoint,"ww1.rds"))
-<<<<<<< HEAD
-# plot function
-ppp_day = function(dat,mod) {
-  mod$summary.fitted.values %>% 
-    dplyr::bind_cols(dat) %>% 
-    ggplot(aes(x=date)) +
-    geom_point(aes(y=logvl)) +
-    geom_ribbon(aes(ymin=`0.025quant`,ymax=`0.975quant`),alpha=.5,fill=cust_cols[1]) +
-    geom_line(aes(y=mean),colour=cust_cols[1]) +
-    annotate(x=min(dat$date),y=min(dat$logvl),geom="text",label=paste0("WAIC=",round(mod$waic$waic)),hjust=0)
-}
-
-#' We now attempt to link the measured SARS-CoV-2 viral load to other indicators of SARS-CoV-2 infection in a population such as counts of laboratory-confirmed cases and hospitalizations.
-#' 
-#+ fig.width=8, fig.height=7.5
-=======
 compute_cv = FALSE
 # plot function
 ppp_day = function(dat,mod,residuals=FALSE) {
@@ -114,27 +98,18 @@ summary_exp = function(mod, pars) {
 #' We now attempt to link the measured SARS-CoV-2 viral load in wastewater to other indicators of SARS-CoV-2 infection in a population such as counts of laboratory-confirmed cases. Figure 1 shows the two time series and the scatter plot. A first issue is the question of the lag between these time series. Because of reporting delays, we would expect the reported cases to be delayed compared to the SARS-CoV-2 viral load in wastewater, although the duration of viral shedding may have an opposite effect. We use cross-correlation to assess the lag between reported cases and wastewater viral load (Figure 2). We find no clear indication of a time shift, and proceed by analyzing the comparative dynamics of both time series without a lag.
 #' 
 #+ fig.width=8, fig.height=5
->>>>>>> gh-pages
 # select one ARA
 chosen_ara = "Aarau"
 # data management
 ww_one = ww1 %>% 
   filter(ara_name==chosen_ara) %>% 
   # remove missing
-<<<<<<< HEAD
-  filter(!is.na(vl)) %>%
-  # log
-  mutate(logvl=log(vl),
-         logrep=log(reported_cases+1),
-         loghos=log(reported_hospit+1)) %>% 
-=======
   filter(!is.na(vl),!is.na(reported_cases)) %>%
   # round reported_cases and hospitalizations
   mutate(reported_cases=round(reported_cases),
          reported_hospit=round(reported_hospit)) %>% 
   # log
   mutate(logvl=log2(vl)) %>% 
->>>>>>> gh-pages
   # manage dates
   mutate(day=as.numeric(date)-min(as.numeric(date)),
          weekend=if_else(lubridate::wday(date,week_start=1)>=5,1,0)) %>% 
@@ -149,88 +124,6 @@ g1b = ggplot(ww_one) +
   labs(x="Viral load (log)",y="Count")
 g1 = cowplot::plot_grid(g1a,g1b,rel_widths = c(2,1))
 g2a = ggplot(ww_one) +
-<<<<<<< HEAD
-  geom_point(aes(x=date,y=logrep),colour=cust_cols[2]) +
-  labs(x="Date",y="Laboratory-confirmed cases (log)")
-g2b = ggplot(ww_one) +
-  geom_point(aes(x=logrep,y=logvl),colour=cust_cols[2]) +
-  geom_smooth(aes(x=logrep,y=logvl),method="lm") +
-  labs(x="Laboratory-confirmed cases (log)",y="Viral load (log)")
-g2 = cowplot::plot_grid(g2a,g2b,rel_widths = c(2,1))
-g3a = ggplot(ww_one) +
-  geom_point(aes(x=date,y=loghos),colour=cust_cols[3]) +
-  labs(x="Date",y="COVID-19 hospitalizations (log)")
-g3b = ggplot(ww_one) +
-  geom_point(aes(x=loghos,y=logvl),colour=cust_cols[3]) +
-  geom_smooth(aes(x=loghos,y=logvl),method="lm") +
-  labs(y="Viral load (log)",x="COVID-19 hospitalizations (log)")
-g3 = cowplot::plot_grid(g3a,g3b,rel_widths = c(2,1))
-cowplot::plot_grid(g1,g2,g3,labels=c("A","B","C"),ncol=1)
-
-#' **Figure 1.** (A) SARS-CoV-2 viral load in wastewater in `r chosen_ara` over time and histogram. (B) Log counts of laboratory-confirmed cases of SARS-CoV-2 infection in the area covered by the  `r chosen_ara` wastewater plant and association with viral load. (C) Log counts of COVID-19 hospitalizations in the area covered by the  `r chosen_ara` wastewater plant and association with viral load.  
-#'   
-#' ## Model B1: log-linear relation with laboratory-confirmed cases
-#' 
-#' There seem to be a linear relation between log viral load and log laboratory-confirmed cases.
-
-mb1 = INLA::inla(logvl ~ 1 + 
-                   logrep,
-                 data = ww_one,
-                 family = "gamma",
-                 control.compute = list(waic=TRUE))
-summary(mb1)
-ppp_day(ww_one,mb1)
-
-# 
-# # model A7: reported cases by period (defined using low points in reported cases)
-# cut_date = ymd("2022-05-15","2022-09-15","2023-01-01")
-# cut_day = as.numeric(cut_date) - min(as.numeric(ww_one$date))
-# ww_one = ww_one %>% 
-#   dplyr::mutate(period=cut(day,breaks=c(-1,cut_day,max(ww_one$day)+1)))
-# cowplot::plot_grid(ggplot(ww_one) + geom_point(aes(x=date,y=logrep),col="red") + geom_vline(xintercept=cut_date,linetype=2),
-#                    ggplot(ww_one) + geom_point(aes(x=date,y=logvl)) + geom_vline(xintercept=cut_date,linetype=2),
-#                    ncol=1)
-# ggplot(ww_one) + geom_point(aes(x=logrep,y=logvl,col=period)) + facet_wrap(~period)
-# ma7 = INLA::inla(logvl ~ 1 + 
-#                    logrep:period, 
-#                  data = ww_one, 
-#                  family = "gamma",
-#                  control.compute = list(waic=TRUE))
-# summary(ma7)
-# ppp_day(ww_one,ma7) + geom_vline(xintercept=cut_date,linetype=2)
-# 
-# ww_one %>% 
-#   bind_cols(ma7$summary.fitted.values) %>% 
-#   ggplot(aes(x=logrep)) + 
-#   geom_point(aes(y=logvl,col=period)) + 
-#   geom_ribbon(aes(ymin=`0.025quant`,ymax=`0.975quant`),alpha=.5,fill=cust_cols[1]) +
-#   geom_line(aes(y=mean),colour=cust_cols[1]) +
-#   facet_wrap(~period)
-# 
-# 
-# 
-# ww_one %>% 
-#   mutate(mean=predict(ma7b)) %>% 
-#   ggplot(aes(x=logrep)) + 
-#   geom_point(aes(y=logvl,col=period)) + 
-#   # geom_ribbon(aes(ymin=`0.025quant`,ymax=`0.975quant`),alpha=.5,fill=cust_cols[1]) +
-#   geom_line(aes(y=mean),colour=cust_cols[1]) +
-#   facet_wrap(~period)
-# 
-# 
-# # model A8: reported cases by period + remaining time trend
-# ma8 = INLA::inla(logvl ~ 1 + 
-#                    logrep:period +
-#                    f(day,period,
-#                      model="rw2",
-#                      hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.001)))), 
-#                  data = ww_one, 
-#                  family = "gaussian",
-#                  control.compute = list(waic=TRUE))
-# summary(ma8)
-# ppp_day(ww_one,ma8)
-# 
-=======
   geom_point(aes(x=date,y=reported_cases),colour=cust_cols[2]) +
   labs(x="Date",y="Reported cases")
 g2b = ggplot(ww_one) +
@@ -382,4 +275,3 @@ summary_exp(mb3,pars="logvl")
 ppp_day(ww_one,mb3)
 if(compute_cv) kfoldcv(ww_one,mb2)
 
->>>>>>> gh-pages

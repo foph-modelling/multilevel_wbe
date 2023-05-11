@@ -9,21 +9,14 @@
 # load libraries ----
 pacman::p_load(tidyverse,
                lubridate,
-<<<<<<< HEAD
-=======
                data.table,
->>>>>>> gh-pages
                ISOweek,
                INLA,
                sf,
                splines,
                cowplot,
-<<<<<<< HEAD
-               flextable)
-=======
                flextable,
                spdep)
->>>>>>> gh-pages
 
 # set paths ----
 path_script = "R/"
