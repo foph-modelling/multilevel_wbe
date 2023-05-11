@@ -52,11 +52,11 @@ mw_103_fig_detect(ww1,detect_limit=0) # TODO: replace by something based on LOQ/
 #' **Figure 3.** SARS-CoV-2 detection in wastewater over time by ARA.
 
 #+ fig.width=8, fig.height=10
-mw_104_fig_vl(ww1,lower_limit=5000)
-#' **Figure 4.** Weekly mean SARS-CoV-2 viral load in wastewater by ARA (removing one outlier below 5,000). Dashed lines show the delimitation in four periods.
+mw_104_fig_vl(ww1,lower_limit=1e4)
+#' **Figure 4.** Weekly mean SARS-CoV-2 viral load in wastewater by ARA (removing one outlier). Dashed lines show the delimitation in four periods.
 
 #+ fig.width=8, fig.height=6
-mw_111_map_vl(ww1,shapes,lower_limit=5000)
+mw_111_map_vl(ww1,shapes,lower_limit=1e4)
 #' **Figure 5.** Mean SARS-CoV-2 viral load in wastewater by ARA by period.
 
 

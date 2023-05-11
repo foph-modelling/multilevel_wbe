@@ -14,7 +14,7 @@ mw_103_fig_detect = function(ww,detect_limit=0) {
     ggplot() +
     geom_tile(aes(x=date,y=ara_kt,fill=detect)) +
     scale_y_discrete(limits=rev) +
-    scale_fill_manual(values=c("grey","steelblue","firebrick")) +
+    scale_fill_manual(values=c("grey","steelblue","firebrick"))
 
   return(g)
 }

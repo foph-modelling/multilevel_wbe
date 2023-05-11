@@ -7,9 +7,9 @@
 
 
 # load libraries ----
-pacman::p_load(tidyverse,
+pacman::p_load(data.table,
+               tidyverse,
                lubridate,
-               data.table,
                ISOweek,
                INLA,
                sf,
