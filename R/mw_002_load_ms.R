@@ -21,10 +21,17 @@ mw_002_load_ms = function() {
   aggr_ara <- function(data, plz_ara, ...) {
     data_count <-
       data %>%
+<<<<<<< HEAD
       dplyr::left_join(plz_ara, by = c("plz_pat" = "plz")) %>%
       dplyr::filter(!is.na(ara_id)) %>%
       dplyr::group_by(ara_id, ...) %>%
       dplyr::summarise(count_per_ara = sum(per_plz/100)) %>%
+=======
+      dplyr::left_join(plz_ara, by = c("plz_pat" = "plz"),relationship = "many-to-many") %>%
+      dplyr::filter(!is.na(ara_id)) %>%
+      dplyr::group_by(ara_id, ...) %>%
+      dplyr::summarise(count_per_ara = sum(per_plz/100),.groups="drop") %>%
+>>>>>>> gh-pages
       dplyr::ungroup()
     return(data_count)
   }

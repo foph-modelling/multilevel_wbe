@@ -7,6 +7,7 @@
 #' output:
 #'    html_document:
 #'      code_folding : hide
+<<<<<<< HEAD
 #' toc: true
 #' toc_float: true
 #' toc_depth: 4
@@ -14,12 +15,28 @@
 #' highlight: pygments
 #' theme: cosmo
 #' link-citations: true
+=======
+#'      toc: true
+#'      toc_float: true
+#'      toc_depth: 4
+#'      number_sections: true
+#'      highlight: pygments
+#'      theme: cosmo
+#'      link-citations: true
+>>>>>>> gh-pages
 #' ---
 
 
 #+ results="hide", warnings="false", echo="false"
+<<<<<<< HEAD
 source("setup.R")
 ww1 = readRDS(fs::path("../",controls$savepoint,"ww1.rds"))
+=======
+compute_cv = FALSE
+source("setup.R")
+ww1 = readRDS(fs::path("../",controls$savepoint,"ww1.rds"))
+shapes = readRDS(fs::path("../",controls$savepoint,"ww1.rds"))
+>>>>>>> gh-pages
 # plot function
 ppp_day = function(dat,mod) {
   mod$summary.fitted.values %>% 
@@ -30,12 +47,17 @@ ppp_day = function(dat,mod) {
     geom_line(aes(y=mean),colour=cust_cols[1]) +
     annotate(x=min(dat$date),y=min(dat$logvl),geom="text",label=paste0("WAIC=",round(mod$waic$waic)),hjust=0)
 }
+<<<<<<< HEAD
 # k-fold cross validation
+=======
+# k-fold cross validation 
+>>>>>>> gh-pages
 kfoldcv = function(dat,mod,k=10) {
   # extract formula
   ff = as.character(mod$.args$formula)
   ff = as.formula(paste(ff[2],ff[1],ff[3]))
   # adapt data
+<<<<<<< HEAD
   dd = dat %>% 
     dplyr::mutate(k=sample(1:k,nrow(dat),replace=TRUE),
                   mean=NA,lbd=NA,upb=NA)
@@ -49,11 +71,33 @@ kfoldcv = function(dat,mod,k=10) {
                family = "gamma",
                control.mode = list(result = mod, restart=TRUE),
                control.predictor = list(compute=TRUE,link=1))
+=======
+  ser = rep(1:k,length.out=nrow(dat))
+  ser = ser[order(ser)]
+  dd = dat %>% 
+    # dplyr::mutate(k=sample(1:k,nrow(dat),replace=TRUE),
+    dplyr::mutate(k=ser,
+                  mean=NA,lbd=NA,upb=NA)
+  # run k-fold cv
+  for(i in 1:k) {
+    rr = which(dd$k==i)
+    ddx = dd %>% 
+      dplyr::mutate(logvl = ifelse(k==i,NA,logvl)) 
+    mm = INLA::inla(ff,
+                    data = ddx,
+                    family = "gamma",
+                    control.mode = list(result = mod, restart=TRUE),
+                    control.predictor = list(compute=TRUE,link=1))
+>>>>>>> gh-pages
     dd[rr,"mean"] = mm$summary.fitted.values[rr,"mean"]
     dd[rr,"lbd"] = mm$summary.fitted.values[rr,"0.025quant"]
     dd[rr,"upb"] = mm$summary.fitted.values[rr,"0.975quant"]
   }
   oo = dd %>% 
+<<<<<<< HEAD
+=======
+    dplyr::filter(!is.na(logvl)) %>% 
+>>>>>>> gh-pages
     dplyr::mutate(se=(logvl-mean)^2,
                   coverage=ifelse(logvl>lbd & logvl<upb,1,0)) %>% 
     summarise(rmse=sqrt(mean(se)),
@@ -64,7 +108,13 @@ kfoldcv = function(dat,mod,k=10) {
   return(output)
 }
 
+<<<<<<< HEAD
 #' We start model development focusing on one ARA. We consider measurements of SARS-CoV-2 viral load on the logarithmic scale. The objective of this first part is to create a model able to describe the variation in SARS-CoV-2 viral load in wastewater over time in one location, depending on covariates, that can be later extended to multiple location. We use a Bayesian approach with *integrated nested Laplace approximation* as implemented in the `R-INLA` package, as it integrates many tools for spatial modelling. For each fitted model we present the model output, posterior predictive plots and a measure of the goodness-of-fit using the WAIC (Watanabe–Akaike information criterion). We also conduct 10-fold cross-validation and consider the root-mean squared error and the coverage in the cross-validation as the main indicator for model selection.
+=======
+#' # One ARA
+#' 
+#' We start model development focusing on one ARA. We consider measurements of SARS-CoV-2 viral load on the logarithmic scale with base 2, so that a unit increase corresponds to a doubling of viral load. The objective of this first part is to create a model able to describe the variation in SARS-CoV-2 viral load in wastewater over time in one location, depending on covariates, that can be later extended to multiple location. We use a Bayesian approach with *integrated nested Laplace approximation* as implemented in the `R-INLA` package, as it integrates many tools for spatial modelling. For each fitted model we present the model output, posterior predictive plots and a measure of the goodness-of-fit using the WAIC (Watanabe–Akaike information criterion). We also conduct 10-fold cross-validation and consider the root-mean squared error and the coverage in the cross-validation as the main indicator for model selection.
+>>>>>>> gh-pages
 
 #+ fig.width=8, fig.height=3.5
 # select one ARA
@@ -72,6 +122,7 @@ chosen_ara = "Aarau"
 # data management
 ww_one = ww1 %>% 
   filter(ara_name==chosen_ara) %>% 
+<<<<<<< HEAD
   # remove missing
   filter(!is.na(vl)) %>%
   # log
@@ -79,6 +130,10 @@ ww_one = ww1 %>%
   # manage dates
   mutate(day=as.numeric(date)-min(as.numeric(date)),
          weekend=if_else(lubridate::wday(date,week_start=1)>=5,1,0)) %>% 
+=======
+  # log
+  mutate(logvl=log2(vl)) %>% 
+>>>>>>> gh-pages
   rownames_to_column()
 # plot
 g1 = ggplot(ww_one) +
@@ -94,6 +149,7 @@ cowplot::plot_grid(g1,g2,labels=c("A","B"),rel_widths = c(2,1))
 #'   
 #' ## Model A1: gamma regression
 #' 
+<<<<<<< HEAD
 #' We select gamma regression with a log link as the dependent variable is continuous and strictly positive. The log link also implies that all effects will be multiplicative. This is espacially useful as ultimately changes in the log viral load over time are expected to follow the epidemic dynamic of SARS-CoV-2, so with exponential growth and exponential decay. 
 #' 
 #' The first, basic model only includes a linear trend over time. 
@@ -119,14 +175,46 @@ ppp_day(ww_one,ma1)
 #' ## Model A2: random walk
 #' 
 #' We deal with the variation in log viral load over time with a random walk, so that the difference between two successive observations follows a normal distribution.
+=======
+#' We select gamma regression with a log link as the dependent variable is continuous and strictly positive. The log link implies an exponential trend over time. This is especially useful as ultimately changes in the log viral load over time are expected to follow the epidemic dynamic of SARS-CoV-2, so with exponential growth and exponential decay. 
+#' 
+#' The first, basic model only includes a exponential trend over time. 
+#' 
+#' $$
+#' \log(log2V) = \alpha + \beta t
+#' $$
+#' 
+#+ fig.width=4, fig.height=3, fig.align="center"
+ma1 = INLA::inla(logvl ~ 1 + day,
+                 data = ww_one,
+                 family = "gamma",
+                 control.compute = list(waic=TRUE,config=TRUE),
+                 control.predictor = list(compute=TRUE,link=1))
+summary(ma1)
+if(compute_cv) kfoldcv(ww_one,ma1)
+ppp_day(ww_one,ma1)
+
+#' In the output we can see the call, the used time in seconds, the posterior estimates of the parameters and hyperparameters, and the WAIC. We also look at the posterior predictive plot comparing the data with model predictions. Obviously it will not produce a good fit of the data, it's just meant as a starting point. 
+#'   
+#' ## Model A2: random walk
+#' 
+#' We model the variation in log viral load over time with a random walk, so that the difference between two successive observations follows a normal distribution.
+>>>>>>> gh-pages
 
 ma2 = INLA::inla(logvl ~ 1 +
                    f(day, model="rw1", scale.model=TRUE, constr=TRUE),
                  data = ww_one,
                  family = "gamma",
+<<<<<<< HEAD
                  control.compute = list(waic=TRUE))
 summary(ma2)
 kfoldcv(ww_one,ma2)
+=======
+                 control.compute = list(waic=TRUE,config=TRUE),
+                 control.predictor = list(compute=TRUE,link=1))
+summary(ma2)
+if(compute_cv) kfoldcv(ww_one,ma2)
+>>>>>>> gh-pages
 ppp_day(ww_one,ma2)
 
 #' We see that the model fits much better, although visual inspection indicates over-fitting.
@@ -139,9 +227,16 @@ ma3 = INLA::inla(logvl ~ 1 +
                    f(day,model="rw2", scale.model=TRUE, constr=TRUE),
                  data = ww_one,
                  family = "gamma",
+<<<<<<< HEAD
                  control.compute = list(waic=TRUE))
 summary(ma3)
 kfoldcv(ww_one,ma3)
+=======
+                 control.compute = list(waic=TRUE,config=TRUE),
+                 control.predictor = list(compute=TRUE,link=1))
+summary(ma3)
+if(compute_cv) kfoldcv(ww_one,ma3)
+>>>>>>> gh-pages
 ppp_day(ww_one,ma3)
 
 #' We still observe some over-fitting, even though there is a clear improvement.
@@ -155,9 +250,16 @@ ma4 = INLA::inla(logvl ~ 1 +
                      hyper=list(prec = list(prior = "pc.prec", param = c(0.1, 0.01)))),
                  data = ww_one,
                  family = "gamma",
+<<<<<<< HEAD
                  control.compute = list(waic=TRUE))
 summary(ma4)
 kfoldcv(ww_one,ma4)
+=======
+                 control.compute = list(waic=TRUE,config=TRUE),
+                 control.predictor = list(compute=TRUE,link=1))
+summary(ma4)
+if(compute_cv) kfoldcv(ww_one,ma4)
+>>>>>>> gh-pages
 ppp_day(ww_one,ma4)
 
 #' The model now appropriately captures the dynamics of SARS-CoV-2 viral load, although still underestimates the variability especially during certain periods.
@@ -178,6 +280,7 @@ ma5 = INLA::inla(logvl ~ 1 +
                    weekend,
                  data = ww_one,
                  family = "gamma",
+<<<<<<< HEAD
                  control.compute = list(waic=TRUE))
 summary(ma5)
 kfoldcv(ww_one,ma5)
@@ -217,3 +320,61 @@ ppp_day(ww_one,ma7)
 #' Results appear similar to model A4.
 #' 
 
+=======
+                 control.compute = list(waic=TRUE,config=TRUE),
+                 control.predictor = list(compute=TRUE,link=1))
+summary(ma5)
+if(compute_cv) kfoldcv(ww_one,ma5)
+ppp_day(ww_one,ma5)
+
+#' 
+#' While the effect size is small, we observe an improvement in the fit. 
+#' 
+#' # All ARAs
+#' 
+#' We continue with model A5, now extending to multiple ARAs together. We start by considering
+#' 
+
+ww_all = ww1 %>% 
+  # log
+  mutate(logvl=log2(vl)) %>% 
+  # manage dates
+  mutate(day=as.numeric(date)-min(as.numeric(date)),
+         weekend=if_else(lubridate::wday(date,week_start=1)>=5,1,0)) %>% 
+  rownames_to_column() %>% 
+  select(ara_id,day,method,weekend)
+ww_all = shapes$ara_shp  %>% 
+  dplyr::left_join(ww_all,by = join_by(ara_id))
+
+# setup neighboring matrix
+sf_use_s2(FALSE)
+neighboring = spdep::poly2nb(ww_all)
+nb2INLA("W.adj", neighboring) 
+
+#' ## Model A6: multiple ARAs
+#'  
+#' There are other covariates available at the level of an ARA that may explain part of the residual variability. One is a change in the methods used to quantify SARS-CoV-2. A second is the day of the week, as behaviour may change for instance during weekends.
+# 
+# ma6 = INLA::inla(logvl ~ 1 +
+#                    f(day,model="rw2", scale.model=TRUE, constr=TRUE,
+#                      hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
+#                    f(ara_n,model="iid") +
+#                    method +
+#                    weekend,
+#                  data = ww_all,
+#                  family = "normal",
+#                  control.compute = list(waic=TRUE))
+# summary(ma6)
+# # kfoldcv(ww_one,ma5)
+# mod = ma6
+# dat = ww_all
+# ppp_day = function(dat,mod) {
+#   mod$summary.fitted.values %>% 
+#     dplyr::bind_cols(dat) %>% 
+#     ggplot(aes(x=date)) +
+#     geom_point(aes(y=logvl)) +
+#     geom_ribbon(aes(ymin=`0.025quant`,ymax=`0.975quant`),alpha=.5,fill=cust_cols[1]) +
+#     geom_line(aes(y=mean),colour=cust_cols[1]) +
+#     annotate(x=min(dat$date),y=min(dat$logvl),geom="text",label=paste0("WAIC=",round(mod$waic$waic)),hjust=0)
+# }
+>>>>>>> gh-pages
