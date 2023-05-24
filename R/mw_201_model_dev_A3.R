@@ -18,6 +18,7 @@
 
 
 #+ results="hide", warnings="false", echo="false"
+if(!exists("controls")) controls = readRDS(fs::path("../savepoints/savepoint_2023-05-15/controls.rds"))
 source("setup.R")
 ww1 = readRDS(fs::path("../",controls$savepoint,"ww1.rds"))
 shapes = readRDS(fs::path("../",controls$savepoint,"shapes.rds"))
@@ -50,10 +51,10 @@ corr_all = ww_all %>%
   count() %>% 
   ungroup() 
 
-mw_100_desc_table(ww_all) %>% 
-  dplyr::mutate(across(everything(),as.character)) %>% 
-  tidyr::gather() %>% 
-  flextable::flextable(cwidth=c(4,4)) 
+#mw_100_desc_table(ww_all) %>% 
+#  dplyr::mutate(across(everything(),as.character)) %>% 
+#  tidyr::gather()# %>% 
+#  flextable::flextable(cwidth=c(4,4)) 
 
 #' ## Model A5.3.1: unique national trend
 #' 

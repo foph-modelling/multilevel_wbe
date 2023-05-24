@@ -15,7 +15,7 @@ pacman::p_load(data.table,
                sf,
                splines,
                cowplot,
-               flextable,
+               #flextable,
                spdep,
                jsonlite,
                scales)
