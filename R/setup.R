@@ -16,7 +16,9 @@ pacman::p_load(data.table,
                splines,
                cowplot,
                flextable,
-               spdep)
+               spdep,
+               jsonlite,
+               scales)
 
 # set paths ----
 path_script = "R/"

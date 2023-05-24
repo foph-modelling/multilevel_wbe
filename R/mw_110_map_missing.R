@@ -8,7 +8,6 @@
 mw_110_map_missing = function(ww,shp,identify_eawag=FALSE) {
   # gather info
   tt = ww %>% 
-    dplyr::filter(measurement==1) %>% 
     dplyr::group_by(ara_id) %>% 
     dplyr::count() 
   
@@ -20,7 +19,7 @@ mw_110_map_missing = function(ww,shp,identify_eawag=FALSE) {
   # plot map
   g = ggplot() +
     geom_sf(data=shp$canton_shp,fill="grey95",colour="grey70") +
-    geom_sf(data=shp$see_shp,fill="skyblue") +
+    geom_sf(data=shp$see_shp,fill="white") +
     geom_sf(data=tt,colour="black",aes(fill=n)) +
     scale_fill_viridis_c() +
     labs(fill="Measurements")

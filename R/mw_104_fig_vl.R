@@ -5,11 +5,11 @@
 # init date: 2023-04-17
 #:::::::::::::::::::::::::::::
 
-mw_104_fig_vl = function(ww,lower_limit=0) {
+mw_104_fig_vl = function(ww) {
   g = ww %>% 
+    dplyr::filter(below_lod==0,below_loq==0) %>% 
     dplyr::group_by(ara_kt,week) %>% 
     dplyr::summarise(vl=mean(vl,na.rm=TRUE),.groups="drop") %>% 
-    dplyr::filter(!is.na(vl),vl>lower_limit) %>%
     ggplot() +
     geom_tile(aes(x=week,y=ara_kt,fill=vl)) +
     scale_y_discrete(limits=rev) +

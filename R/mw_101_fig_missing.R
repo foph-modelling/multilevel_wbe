@@ -7,7 +7,6 @@
 
 mw_101_fig_missing = function(ww,identify_eawag=FALSE) {
   g = ww %>% 
-    dplyr::filter(measurement==1) %>% 
     ggplot() +
     geom_point(aes(x=date,y=ara_kt,colour=kt),size=.5) +
     scale_y_discrete(limits=rev) +
@@ -17,7 +16,6 @@ mw_101_fig_missing = function(ww,identify_eawag=FALSE) {
   if(identify_eawag) {
     g = ww %>% 
       mutate(eawag=ifelse(lab=="EAWAG","EAWAG","other")) %>% 
-      filter(measurement==1) %>% 
       ggplot() +
       geom_point(aes(x=date,y=ara_kt,fill=kt,colour=eawag),shape=21,size=.8,stroke=.1) +
       scale_y_discrete(limits=rev) +

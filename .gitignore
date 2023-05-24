@@ -1,5 +1,6 @@
 # Sensitive data
 /sens_data/*
+/savepoints/*
 
 # History files
 .Rhistory
