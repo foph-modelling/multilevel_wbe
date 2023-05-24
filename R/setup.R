@@ -29,6 +29,7 @@ lapply(X = fili, FUN = function(x) {source(paste0(path_script, x), echo=FALSE)})
 
 # create savepoint repertory if not existing ----
 dir.create(file.path("./", controls$savepoint), showWarnings = FALSE)
+saveRDS(controls,file=fs::path(controls$savepoint,"controls.rds"))
 
 # common ----
 
