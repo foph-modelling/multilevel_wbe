@@ -1,0 +1,14 @@
+Loading required package: stats
+Loading required package: utils
+
+
+	You ask for 128 x 1 = 128 number of threads,
+	which is more that I got from the system: 1
+	Number of threads is reduced to 1:1
+
+
+
+	You ask for 128 x 1 = 128 number of threads,
+	which is more that I got from the system: 1
+	Number of threads is reduced to 1:1
+
