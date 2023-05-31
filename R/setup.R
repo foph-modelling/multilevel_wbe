@@ -20,12 +20,9 @@ pacman::p_load(data.table,
                jsonlite,
                scales)
 
-# set paths ----
-path_script = "R/"
-
 # source functions ----
-fili = dir(path_script,pattern="mw_[013456789]")
-lapply(X = fili, FUN = function(x) {source(paste0(path_script, x), echo=FALSE)})
+fili = dir(pattern="mw_[013456789]")
+lapply(X = fili, FUN = function(x) {source(paste0(x), echo=FALSE)})
 
 # create savepoint repertory if not existing ----
 dir.create(file.path("./", controls$savepoint), showWarnings = FALSE)
