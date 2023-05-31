@@ -79,7 +79,7 @@ if(controls$rerun_models) {
   saveRDS(ma5.3.1,file=paste0("../",controls$savepoint,"ma5.3.1.rds"))
 } else {
   ma5.3.1 = readRDS(file=paste0("../",controls$savepoint,"ma5.3.1.rds"))
-}
+
 
 summary(ma5.3.1)
 summary_exp_vl(ma5.3.1,pars="lab|method|hol|weekend")
@@ -113,6 +113,7 @@ ma5.3.1$summary.random$day1 %>%
   scale_y_continuous(trans="log",breaks = c(.1,1,10)) +
   coord_cartesian(ylim=c(.05,20)) +
   labs(title="Deviations from average time trend by ARA",x="Day",y="Relative viral load by ARA") 
+}
 
 #' 
 #' 
@@ -140,7 +141,7 @@ if(controls$rerun_models) {
   saveRDS(ma5.3.2,file=paste0("../",controls$savepoint,"ma5.3.2.rds"))
 } else {
   ma5.3.2 = readRDS(file=paste0("../",controls$savepoint,"ma5.3.2.rds"))
-}
+
 
 summary(ma5.3.2)
 summary_exp_vl(ma5.3.2,pars="lab|method|hol|weekend")
@@ -174,6 +175,7 @@ ma5.3.2$summary.random$day1 %>%
   scale_y_continuous(trans="log",breaks = c(.1,1,10)) +
   coord_cartesian(ylim=c(.05,20)) +
   labs(title="Deviations from average time trend by ARA",x="Day",y="Relative viral load by ARA") 
+}
 
 #' 
 #' 
