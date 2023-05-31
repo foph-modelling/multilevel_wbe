@@ -13,8 +13,8 @@ data_date = "2023-03-14" # name of the repertory with fixed data (up-to-date was
 data_path = "../../02_data/wastewater/"
 period_dates = c("2022-05-16","2022-09-05","2023-01-02") # set at the lowest points between waves, on Mondays so weeks are not cut
 controls = list(update_data=FALSE, # set to TRUE before sourcing to update the data
-                rerun_models=FALSE, # only applies to large models
-                compute_cv=TRUE, 
+                rerun_models=TRUE, # only applies to large models
+                compute_cv=FALSE, 
                 data_date=data_date,
                 analysis_date=analysis_date,
                 data_path=data_path,

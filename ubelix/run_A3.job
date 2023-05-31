@@ -3,6 +3,7 @@
 #SBATCH --mail-user=julien.riou@unibe.ch
 #SBATCH --mail-type=fail
 #SBATCH --time=12:00:00
+#SBATCH --mem-per-cpu=8G
 
 # Load module 
 ml R
