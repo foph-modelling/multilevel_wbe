@@ -1,5 +1,5 @@
 #' ---
-#' title: "WBE for SARS-CoV-2 in Switzerland: model development (A1) "
+#' title: "WBE for SARS-CoV-2 in Switzerland: model development A1 (one ARA) "
 #' author: "Julien Riou"
 #' date: "`r Sys.Date()`"
 #' params:
@@ -7,9 +7,6 @@
 #' output:
 #'    html_document:
 #'      code_folding : hide
-#'      toc: true
-#'      toc_float: true
-#'      toc_depth: 4
 #'      number_sections: false
 #'      highlight: pygments
 #'      theme: cosmo
@@ -22,11 +19,10 @@ source("setup.R")
 ww1 = readRDS(fs::path("../",controls$savepoint,"ww1.rds"))
 shapes = readRDS(fs::path("../",controls$savepoint,"ww1.rds"))
 
-#' # One ARA
-#' 
-#' We start model development focusing on one ARA. The objective of this first part is to create a model able to describe the variation in SARS-CoV-2 viral load in wastewater over time in one location depending on covariates. The model will later be extended to multiple location. We use a Bayesian approach based on *integrated nested Laplace approximation* as implemented in the `R-INLA` package, as it integrates many tools for spatial modelling. For each fitted model we present the model output, posterior predictive plots and a measure of the goodness-of-fit using the WAIC (Watanabe–Akaike information criterion). We also conduct 10-fold cross-validation and consider the root-mean squared error and the coverage in the cross-validation as the main indicator for model selection.
 
-#+ fig.width=8, fig.height=3.5
+#' We start model development focusing on the ARA of *Aarau*. The objective of this first part is to create a model able to describe the variation in SARS-CoV-2 viral load in wastewater over time in one location depending on covariates. The model will later be extended to multiple location. We use a Bayesian approach based on *integrated nested Laplace approximation* as implemented in the `R-INLA` package, as it integrates many tools for spatial modelling. For each fitted model we present the model output, posterior predictive plots and a measure of the goodness-of-fit using the WAIC (Watanabe–Akaike information criterion). We also conduct 10-fold cross-validation and consider the root-mean squared error and the coverage in the cross-validation as the main indicator for model selection.
+#' 
+#+ desc, fig_desc, fig.width=8, fig.height=3.5
 # select one ARA
 chosen_ara = "Aarau"
 # data management
@@ -51,14 +47,15 @@ cowplot::plot_grid(g1,g2,labels=c("A","B"),rel_widths = c(2,1))
 #'   
 #' ## Model A1: linear regression
 #' 
-#' We use gamma regression as the dependent variable is continuous and strictly positive. The log transformation implies that all effects are multiplicative. We model the limit of quantification by allowing for a larger variability in viral load when the concentration estimate is below the LOQ (note that because of changing flow it may not always correspond to the lowest viral load values).
+#' We use gamma regression as the dependent variable is continuous and strictly positive. The log transformation implies that all effects are multiplicative. The first, basic model only includes a exponential trend over time:
 #' 
-#' The first, basic model only includes a exponential trend over time:
+#' $$ \log(V_i) = \alpha + \beta t_i $$
 #' 
-#' $$
-#' \log(V) = \alpha + \beta t
-#' $$
-#' 
+#' We model the limit of quantification by allowing for a larger variability in viral load when the concentration estimate is below the LOQ (note that because of changing flow it may not always correspond to the lowest viral load values):
+#' $$ \log(V_i) = \alpha + \beta t_i + \gamma^{LOQ_i} $$
+#' $$ \gamma^{LOQ_i} \sim normal(0,\sigma^{LOQ}) $$
+#' Note that the INLA output shows precision, so $1/\gamma^{LOQ_i}$.
+#+ ma1,  R.options = list(width = 1000)
 ma1 = INLA::inla(vl ~ 1 + 
                    f(below_loq,model="iid") +
                    day,
@@ -75,8 +72,8 @@ ppp_vl(ww_one,ma1)
 #'   
 #' ## Model A2: random walk
 #' 
-#' We model the variation in log viral load over time with a random walk, so that the difference between two successive observations follows a normal distribution.
-
+#' We model the variation in log viral load over time with a random walk, so that the differences between two successive observations follow a normal distribution.
+#+ ma2,  R.options = list(width = 1000)
 ma2 = INLA::inla(vl ~ 1 +
                    f(below_loq,model="iid") +
                    f(day, model="rw1", scale.model=TRUE, constr=TRUE),
@@ -93,7 +90,7 @@ ppp_vl(ww_one,ma2)
 #' ## Model A3: random walk of order 2
 #' 
 #' We attempt to reduce over-fitting by using a random-walk of order 2, so that the difference depends on the last 2 observations.
-
+#+ ma3,  R.options = list(width = 1000)
 ma3 = INLA::inla(vl ~ 1 +
                    f(below_loq,model="iid") +
                    f(day,model="rw2", scale.model=TRUE),
@@ -110,7 +107,7 @@ ppp_vl(ww_one,ma3)
 #' ## Model A4: random walk of order 2 + penalized complexity
 #' 
 #' We reduce over-fitting by adding priors that penalize complexity (Simpson et al, 2017).
-#'  
+#+ ma4,  R.options = list(width = 1000)
 ma4 = INLA::inla(vl ~ 1 +
                    f(below_loq,model="iid") +
                    f(day, model="rw2", scale.model=TRUE, constr=TRUE,
@@ -128,7 +125,7 @@ ppp_vl(ww_one,ma4)
 #' ## Model A5: additional covariates
 #'  
 #' There are other covariates available at the level of an ARA that may explain part of the residual variability. One is a change in the methods used to quantify SARS-CoV-2. A second is the day of the week, as behaviour may change for instance during weekends. For fixed effects we use weak normal priors with mean 0 and variance 5 on the log scale, corresponding to relative viral load values ranging between 0.01 and 80 (95% CrI).
-
+#+ ma5, R.options = list(width = 1000)
 ma5 = INLA::inla(vl ~ 1 +
                    f(below_loq,model="iid",constr=FALSE) +
                    f(day,model="rw2", scale.model=TRUE, constr=TRUE,
@@ -155,7 +152,7 @@ ppp_vl(ww_one,ma5)
 #' ### Model A5 on Basel
 #' 
 #' We apply model A5 to the Basel ARA, and even though there is no change in method the model fits quite well.
-
+#+ ma5basel, R.options = list(width = 1000)
 chosen_ara = "Basel"
 ww_one = ww1 %>% 
   filter(ara_name==chosen_ara) %>% 
@@ -185,7 +182,7 @@ ppp_vl(ww_one,ma5b)
 #' 
 #' Contrary to Aarau, we find measurements of zero in Region Bern, which creates problems with logarithms. Instead of using zero-inflated models, we treat the zero values as very low (value = 1) and allow for additional variability, similarly to values below the limit of detection.
 #' 
-
+#+ ma5bern, R.options = list(width = 1000)
 chosen_ara = "Region Bern"
 # data management
 ww_one = ww1 %>% 
@@ -220,7 +217,7 @@ ppp_vl(ww_one,ma5b)
 #' 
 #' Saanen is the place with the most number of measurements below the limit of detection.
 #' 
-
+#+ ma5saanen, R.options = list(width = 1000)
 chosen_ara = "Saanen"
 # data management
 ww_one = ww1 %>% 
@@ -254,7 +251,7 @@ ppp_vl(ww_one,ma5b)
 #' 
 #' In Laupen there are many measurements below the limit of quantification, the model is still fine.
 #' 
-
+#+ ma5laupen, R.options = list(width = 1000)
 chosen_ara = "Laupen"
 # data management
 ww_one = ww1 %>% 

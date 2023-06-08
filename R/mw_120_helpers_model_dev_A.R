@@ -87,7 +87,7 @@ ppp_vl_ara = function(dat,mod) {
   mod$summary.fitted.values %>% 
     dplyr::bind_cols(dat) %>% 
     ggplot(aes(x=date)) +
-    geom_point(aes(y=vl)) +
+    geom_point(aes(y=vl),alpha=.3) +
     geom_ribbon(aes(ymin=`0.025quant`,ymax=`0.975quant`),alpha=.5,fill=cust_cols[1]) +
     geom_line(aes(y=mean),colour=cust_cols[1]) +
     scale_y_continuous(trans="log",

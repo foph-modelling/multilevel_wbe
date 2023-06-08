@@ -23,7 +23,7 @@ mw_111_map_vl = function(ww,shp) {
   vl_range = ww %>% 
     dplyr::group_by(ara_id,period,week) %>% 
     dplyr::summarise(vl=mean(vl,na.rm=TRUE),.groups="drop") %>% 
-    dplyr::filter(!is.na(vl),vl>lower_limit) %>% 
+    dplyr::filter(!is.na(vl)) %>% 
     dplyr::summarise(min=min(vl,na.rm=TRUE),max=max(vl,na.rm=TRUE))
 
   # plot map

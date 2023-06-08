@@ -7,9 +7,6 @@
 #' output:
 #'    html_document:
 #'      code_folding : hide
-#'      toc: true
-#'      toc_float: true
-#'      toc_depth: 4
 #'      number_sections: false
 #'      highlight: pygments
 #'      theme: cosmo
@@ -34,6 +31,7 @@ shapes = readRDS(fs::path("../",controls$savepoint,"shapes.rds"))
 #' Viral load varied over time, with large heterogeneity across ARAs, although some patterns emerge on visual inspection (Figure 3). 
 #' 
 
+#+ desc_tab
 mw_100_desc_table(ww1) %>% 
   dplyr::mutate(across(everything(),as.character)) %>% 
   tidyr::gather() %>% 
@@ -41,28 +39,29 @@ mw_100_desc_table(ww1) %>%
   flextable::flextable(cwidth=c(4,4)) 
 #' **Table 1.** Summary of available data.
 
+#+ desc_tab_nuts2
 mw_100_desc_table(ww1,NUTS2_name) %>% 
   dplyr::select(1:7)  %>% 
   flextable::flextable(cwidth=rep(4,7)) 
 #' **Table 2.** Summary of available data by NUTS-2 region.
 
-#+ fig.width=8, fig.height=10
+#+ fig_missing, fig.width=8, fig.height=10
 mw_101_fig_missing(ww1)
 #' **Figure 1.** Available measurements over time by ARA (grouped by canton).
 
-#+ fig.width=8, fig.height=6
+#+ map_missing, fig.width=8, fig.height=6
 mw_110_map_missing(ww1,shapes)
 #' **Figure 2.** Total measurements by ARA.
 
-#+ fig.width=8, fig.height=10
+#+ fig_detect, fig.width=8, fig.height=10
 mw_103_fig_detect(ww1)
 #' **Figure 3.** SARS-CoV-2 detection in wastewater over time by ARA.
 
-#+ fig.width=8, fig.height=10
+#+ fig_vl, fig.width=8, fig.height=10
 mw_104_fig_vl(ww1)
 #' **Figure 4.** Weekly mean SARS-CoV-2 viral load in wastewater by ARA (removing values below the LOD or LOQ). Dashed lines show the delimitation in four periods.
 
-#+ fig.width=8, fig.height=6
+#+ map_vl, fig.width=8, fig.height=6
 mw_111_map_vl(ww1,shapes)
 #' **Figure 5.** Mean SARS-CoV-2 viral load in wastewater by ARA by period.
 

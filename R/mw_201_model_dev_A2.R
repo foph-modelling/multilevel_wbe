@@ -7,9 +7,6 @@
 #' output:
 #'    html_document:
 #'      code_folding : hide
-#'      toc: true
-#'      toc_float: true
-#'      toc_depth: 4
 #'      number_sections: false
 #'      highlight: pygments
 #'      theme: cosmo
@@ -29,7 +26,6 @@ shapes = readRDS(fs::path("../",controls$savepoint,"shapes.rds"))
 #' 
 #' We start with the Mittelland region, that includes 24 ARAs. 
 #' 
-#+ fig.width=8, fig.height=3.5
 
 # select NUTS2 region
 select_NUTS2 = "Mittelland"
@@ -38,9 +34,6 @@ ww_reg = ww1 %>%
   dplyr::mutate(logvl=log(vl)) %>%
   # select one ARA per NUTS-2
   dplyr::filter(NUTS2_name==select_NUTS2) %>%
-  # replace zero values by 1
-  dplyr::mutate(vl=if_else(vl==0, 1, vl)) %>%
-  dplyr::filter(!is.na(vl)) %>%
   # create indexes for INLA
   dplyr::mutate(day1=day,
                 ara1=as.numeric(as.factor(ara_n)),
@@ -61,15 +54,17 @@ mw_100_desc_table(ww_reg,ara_name) %>%
   dplyr::select(1:7)  %>% 
   flextable::flextable(cwidth=rep(4,7)) 
 
-g1 = mw_110_map_missing(ww_reg,shapes)
-g2 = ggplot(ww_reg) + geom_line(aes(x=date,y=logvl,colour=ara_name),alpha=.6) + scale_colour_discrete(guide="none")
-cowplot::plot_grid(g1,g2,ncol=1)
+#+ desc_missing, fig.width=6, fig.height=3.5
+mw_110_map_missing(ww_reg,shapes) + labs(title="Number of measurements")
+
+#+ desc_vl, fig.width=8, fig.height=3.5
+ggplot(ww_reg) + geom_line(aes(x=date,y=logvl,colour=ara_name),alpha=.6) + scale_colour_discrete(guide="none") + labs(title="Viral load measurements")
 
 #'  
 #' ## Model A5.1: fixed effect
 #'  
 #' We add a geographical structure to model A5, starting by simply adding a fixed effect by ARA, assuming that the time trends of viral load across ARAs are identical. In Mittelland there is no change of methods, and there are 3 laboratories including 2 that only process one ARA each, so we leave these aspects out for now.
-
+#+ ma5.1, fig.width=8, fig.height=8,  R.options = list(width = 1000)
 if(controls$rerun_models) {
   ma5.1 = INLA::inla(vl ~ 1 +
                        f(below_loq,model="iid") +
@@ -87,20 +82,18 @@ if(controls$rerun_models) {
 } else {
   ma5.1 = readRDS(file=paste0("../",controls$savepoint,"ma5.1.rds"))
 }
-
 summary(ma5.1)
 summary_exp_vl(ma5.1,pars="lab|method|hol|weekend")
 ppp_vl_ara(ww_reg,ma5.1) 
-
-print("Relative viral load by ARA compared to average:")
+print("Relative viral load by ARA compared to reference 'Aarwangen (Zala)':")
 summary_exp_vl(ma5.1,pars="ara_n",order=TRUE)
 
-#' We observe a large heterogeneity across ARAs, with highest relative viral load in Interlaken and Grindelwald and lower relative viral load in Bern (note that viral load already accounts for population size). 
+#' We observe a large heterogeneity across ARAs, with highest relative viral load compared to reference in Lauterbrunnen, Interlaken and Grindelwald and lower relative viral load in Bern, La Chaux-de-Fonds and Emmental (note that viral load already accounts for population size). 
 #'  
 #' ## Model A5.2: random intercept
 #'  
 #' We consider using a random intercept by ARA.
-
+#+ ma5.2, fig.width=8, fig.height=8,  R.options = list(width = 1000)
 if(controls$rerun_models) {
   ma5.2 = INLA::inla(vl ~ 1 +
                        f(below_loq,model="iid") +
@@ -118,12 +111,9 @@ if(controls$rerun_models) {
 } else {
   ma5.2 = readRDS(file=paste0("../",controls$savepoint,"ma5.2.rds"))
 }
-
-
 summary(ma5.2)
 summary_exp_vl(ma5.2,pars="lab|method|hol|weekend")
 ppp_vl_ara(ww_reg,ma5.2) 
-
 print("Relative viral load by ARA compared to average:")
 ma5.2$summary.random$ara1 %>% 
   as_tibble() %>% 
@@ -136,13 +126,13 @@ ma5.2$summary.random$ara1 %>%
   select(-ara1) %>% 
   column_to_rownames(var="ara_name")
 
-#'  Results are very similar, as expected ARA-level intercepts are pulled towards 0.
+#'  Results are similar in terms of rankings. Of course the reference is now the between-ARA mean instead of one arbitrary ARA, which is more easily interpreted. As expected ARA-level intercepts are pulled towards the mean.
 #'  
 #'  
 #' ## Model A5.3: space-time interaction
 #' 
 #' We now allow different time trends across ARAs.
-#'  
+#+ ma5.3, fig.width=8, fig.height=8,  R.options = list(width = 1000)
 if(controls$rerun_models) {
   ma5.3 = INLA::inla(vl ~ 1 +
                        f(below_loq,model="iid") +
@@ -163,11 +153,9 @@ if(controls$rerun_models) {
 } else {
   ma5.3 = readRDS(file=paste0("../",controls$savepoint,"ma5.3.rds"))
 }
-
 summary(ma5.3)
 summary_exp_vl(ma5.3,pars="lab|method|hol|weekend")
 ppp_vl_ara(ww_reg,ma5.3)
-
 print("Relative viral load by ARA compared to average:")
 ma5.3$summary.random$ara1 %>% 
   as_tibble() %>% 
@@ -179,7 +167,6 @@ ma5.3$summary.random$ara1 %>%
   dplyr::arrange(-`exp(beta)`) %>% 
   select(-ara1) %>% 
   column_to_rownames(var="ara_name")
-
 ndays = length(unique(ww_reg$day))
 nara = length(unique(ww_reg$ara1))
 ma5.3$summary.random$day1 %>% 
@@ -197,13 +184,13 @@ ma5.3$summary.random$day1 %>%
   coord_cartesian(ylim=c(.05,20)) +
   labs(title="Deviations from average time trend by ARA",x="Day",y="Relative viral load by ARA") 
 
-#' This brings a clear improvement in WAIC. We observe further shrinkage in the between-ARA heterogeneity, with highest relative viral loads in Laupen, Lauterbrunnen, Grindelwald and Neuchâtel (four ARAs where the credible intervals are the highest) and lowest relative viral loads in Delemont, La-Chaux-de-Fonds, Emmental and Bern (four ARAs where the credible intervals are the lowest). While time trends are generally aligned, we observe deviations from the regional average time trend in some ARAs such as Delemont and La-Chaux-de-Fonds (comparatively lower viral loads during Summer 2022), and in Lauterbrunnen, Grindelwald and Interlaken (comparatively higher during Summer 2022). 
+#' This brings a clear improvement in WAIC. We observe similar average between-ARA heterogeneity, with highest relative viral loads in Laupen, Lauterbrunnen, Grindelwald and Neuchâtel (four ARAs where the credible intervals are the highest) and lowest relative viral loads in Delemont, La-Chaux-de-Fonds, Emmental and Bern (four ARAs where the credible intervals are the lowest). While time trends are generally aligned, we observe deviations from the regional average time trend in some ARAs such as Colombier, Delemont and La-Chaux-de-Fonds (comparatively lower viral loads during Summer 2022), and in Lauterbrunnen, Grindelwald and Interlaken (comparatively higher during Summer 2022). 
 #'  
 #' ## Model A5.4: spatial structure
 #'  
 #' We now consider the neighboring structure between ARAs.
 #' 
-
+#+ ma5.4, fig.width=8, fig.height=8,  R.options = list(width = 1000)
 # setup neighboring matrix
 shapes_reg = shapes$ara_shp %>% 
   dplyr::filter(ara_id %in% ww_reg$ara_id) %>% 
@@ -213,7 +200,6 @@ sf_use_s2(FALSE)
 graph_reg = spdep::poly2nb(shapes_reg)
 path_graph = paste0("../",controls$savepoint,"W_reg_",select_NUTS2,".adj")
 nb2INLA(path_graph, graph_reg)
-
 if(controls$rerun_models) {
   ma5.4 = INLA::inla(vl ~ 1 +
                        f(below_loq,model="iid") +
@@ -239,11 +225,9 @@ if(controls$rerun_models) {
 } else {
   ma5.4 = readRDS(file=paste0("../",controls$savepoint,"ma5.4.rds"))
 }
-
 summary(ma5.4)
 summary_exp_vl(ma5.4,pars="lab|method|hol|weekend")
 ppp_vl_ara(ww_reg,ma5.4) 
-
 print("Relative viral load by ARA compared to average:")
 ma5.4$summary.random$ara1 %>% 
   as_tibble() %>% 
@@ -256,7 +240,6 @@ ma5.4$summary.random$ara1 %>%
   dplyr::select(-ara1) %>% 
   dplyr::filter(!is.na(ara_name)) %>% 
   column_to_rownames(var="ara_name")
-  
 ndays = length(unique(ww_reg$day))
 nara = length(unique(ww_reg$ara1))
 ma5.4$summary.random$day1 %>% 
@@ -273,8 +256,6 @@ ma5.4$summary.random$day1 %>%
   scale_y_continuous(trans="log",breaks = c(.1,1,10)) +
   coord_cartesian(ylim=c(.05,20)) +
   labs(title="Deviations from average time trend by ARA",x="Day",y="Relative viral load by ARA") 
-
 #'  
-#' We don't find clear arguments in favor of a spatial structure in the variation across ARAs within the Mitelland region. Results are very similar to model A5.3.
+#' Results are very similar to model A5.3. We find that the spatial structure explains between 0 and 70% of the spatial heterogeneity.
 #' 
-
