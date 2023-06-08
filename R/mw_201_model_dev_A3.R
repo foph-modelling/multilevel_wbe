@@ -31,6 +31,7 @@ shapes = readRDS(fs::path("../",controls$savepoint,"shapes.rds"))
 ww_all = ww1 %>%
   # log
   dplyr::mutate(logvl=log(vl)) %>%
+  mutate(vl=if_else(vl==0, 1, vl)) %>%
   # create indexes for INLA
   dplyr::mutate(day1=day,
                 ara1=as.numeric(as.factor(ara_n)),
@@ -52,10 +53,12 @@ corr_all_ara = ww_all %>%
   count() %>% 
   ungroup() 
 
-#mw_100_desc_table(ww_all) %>% 
-#  dplyr::mutate(across(everything(),as.character)) %>% 
-#  tidyr::gather()# %>% 
-#  flextable::flextable(cwidth=c(4,4)) 
+if(!controls$rerun_models) {
+  mw_100_desc_table(ww_all) %>%
+   dplyr::mutate(across(everything(),as.character)) %>%
+   tidyr::gather() %>%
+   flextable::flextable(cwidth=c(4,4))
+}
 
 #' ## Model A5.3.1: unique national trend
 #' 
@@ -80,59 +83,58 @@ if(controls$rerun_models) {
   saveRDS(ma5.3.1,file=paste0("../",controls$savepoint,"ma5.3.1.rds"))
 } else {
   ma5.3.1 = readRDS(file=paste0("../",controls$savepoint,"ma5.3.1.rds"))
-}
-summary(ma5.3.1)
-summary_exp_vl(ma5.3.1,pars="lab|method|hol|weekend")
-ppp_vl_ara(ww_all,ma5.3.1)
-# Relative viral load by ARA compared to average
-tt = ma5.3.1$summary.random$ara1 %>% 
-  as_tibble() %>% 
-  dplyr::transmute(ara1=ID,
-                   `exp(beta)`=round(exp(mean),2),
-                   `0.025quant`=round(exp(`0.025quant`),2),
-                   `0.975quant`=as.numeric(format(round(exp(`0.975quant`),2),scientific=FALSE))) %>% 
-  dplyr::left_join(corr_all_ara,by = join_by(ara1)) %>% 
-  dplyr::arrange(`exp(beta)`) %>% 
-  dplyr::mutate(rank=as.factor(row_number()))
-ggplot(tt) +
-  geom_pointrange(aes(x=rank,y=`exp(beta)`,ymin=`0.025quant`,ymax=`0.975quant`,colour=NUTS2_name)) +
-  scale_x_discrete(labels=tt$ara_name) +
-  scale_y_continuous(trans="pseudo_log",breaks=c(0,1,2,3,4,5,10)) +
-  geom_hline(yintercept=1,linetype=2) +
-  coord_flip() +
-  theme(legend.position=c(.8,.2)) +
-  labs(x=NULL,colour="NUTS2 region",title="Relative viral load by ARA compared to average")
-# Deviations from average
-ndays = length(1:max(ww_all$day))
-nara = length(unique(ww_all$ara1))
-tt = ma5.3.1$summary.random$day1 %>% 
-  bind_cols(day=rep(0:(ndays-1),nara),
-            ara1=rep(1:nara,each=ndays)) %>% 
-  left_join(corr_all,by = join_by(ara1)) 
+  summary(ma5.3.1)
+  summary_exp_vl(ma5.3.1,pars="lab|method|hol|weekend")
+  ppp_vl_ara(ww_all,ma5.3.1)
+  # Relative viral load by ARA compared to average
+  tt = ma5.3.1$summary.random$ara1 %>% 
+    as_tibble() %>% 
+    dplyr::transmute(ara1=ID,
+                     `exp(beta)`=round(exp(mean),2),
+                     `0.025quant`=round(exp(`0.025quant`),2),
+                     `0.975quant`=as.numeric(format(round(exp(`0.975quant`),2),scientific=FALSE))) %>% 
+    dplyr::left_join(corr_all_ara,by = join_by(ara1)) %>% 
+    dplyr::arrange(`exp(beta)`) %>% 
+    dplyr::mutate(rank=as.factor(row_number()))
+  ggplot(tt) +
+    geom_pointrange(aes(x=rank,y=`exp(beta)`,ymin=`0.025quant`,ymax=`0.975quant`,colour=NUTS2_name)) +
+    scale_x_discrete(labels=tt$ara_name) +
+    scale_y_continuous(trans="pseudo_log",breaks=c(0,1,2,3,4,5,10)) +
+    geom_hline(yintercept=1,linetype=2) +
+    coord_flip() +
+    theme(legend.position=c(.8,.2)) +
+    labs(x=NULL,colour="NUTS2 region",title="Relative viral load by ARA compared to average")
+  # Deviations from average
+  ndays = length(1:max(ww_all$day))
+  nara = length(unique(ww_all$ara1))
+  tt = ma5.3.1$summary.random$day1 %>% 
+    bind_cols(day=rep(0:(ndays-1),nara),
+              ara1=rep(1:nara,each=ndays)) %>% 
+    left_join(corr_all,by = join_by(ara1)) 
   tt %>% 
     group_by(ara_name) %>% 
-  mutate(high=sum(`0.025quant`>0)/n(),
-         low=sum(`0.975quant`<0)/n(),
-         max=max(mean),
-         min=min(mean)) %>% 
-    filter(high>0.05, low<0.05) %>% 
-  ggplot() +
-  geom_hline(yintercept=1,linetype=2,alpha=.5) +
-  geom_ribbon(aes(x=day,ymin=exp(`0.025quant`),ymax=exp(`0.975quant`),fill=NUTS2_name),alpha=.5) +
-  geom_line(aes(x=day,y=exp(mean),colour=NUTS2_name)) +
-  facet_wrap(~ara_name) +
-  scale_colour_discrete(guide="none") +
-  scale_fill_discrete(guide="none") +
-  scale_y_continuous(trans="log",breaks = c(.1,1,10)) +
-  coord_cartesian(ylim=c(.05,20)) +
-  labs(title="Deviations from national average time trend by ARA (>10% deviations)",x="Day",y="Relative viral load by ARA") 
-
-
-#' 
+    mutate(high=sum(`0.025quant`>1)/n(),
+           low=sum(`0.975quant`<-1)/n(),
+           max=max(mean),
+           min=min(mean)) %>% 
+    filter(high>0.01 | low>0.01) %>%
+    arrange(max) %>% 
+    ungroup() %>% 
+    ggplot() +
+    geom_hline(yintercept=1,linetype=2,alpha=.5) +
+    geom_ribbon(aes(x=day,ymin=exp(`0.025quant`),ymax=exp(`0.975quant`),fill=NUTS2_name),alpha=.5) +
+    geom_line(aes(x=day,y=exp(mean),colour=NUTS2_name)) +
+    facet_wrap(~ara_name) +
+    scale_colour_discrete(guide="none") +
+    scale_fill_discrete(guide="none") +
+    scale_y_continuous(trans="log",breaks = c(.1,1,10)) +
+    coord_cartesian(ylim=c(.05,20)) +
+    labs(title="Deviations from national average time trend by ARA (>10% deviations)",x="Day",y="Relative viral load by ARA") 
+}
 #' 
 #' ## Model A5.3.2: effect of lab and method change
 #' 
-#' We add a covariate to measure the effect of the lab methodology. To ensure identifiability, we have to make sure that there are several ARAs per laboratory, so we group together KLBS (only 1 ARA) and KLZH (12 ARAs). We also include methods change by creating an interaction laboratory/method.
+#' We add a covariate to measure the effect of the lab methodology. To ensure identifiability, we have to make sure that there are multiple ARAs per laboratory, so we group together KLBS (only 1 ARA) and KLZH (12 ARAs). We also include methods change by creating an interaction laboratory/method.
 #'  
 if(controls$rerun_models) {
   ma5.3.2 = INLA::inla(vl ~ 1 +
@@ -146,7 +148,7 @@ if(controls$rerun_models) {
                          f(day1,model="rw1", scale.model=TRUE, constr=TRUE,
                            group=ara2, control.group=list(model="iid"),
                            hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
-                         f(lab_method,model="linear",mean.linear=0,prec.linear=.2),
+                         lab_method,
                        data = ww_all,
                        family = "gamma",
                        control.compute = list(waic=TRUE,config=TRUE),
@@ -154,40 +156,38 @@ if(controls$rerun_models) {
   saveRDS(ma5.3.2,file=paste0("../",controls$savepoint,"ma5.3.2.rds"))
 } else {
   ma5.3.2 = readRDS(file=paste0("../",controls$savepoint,"ma5.3.2.rds"))
-
-
-summary(ma5.3.2)
-summary_exp_vl(ma5.3.2,pars="lab|method|hol|weekend")
-ppp_vl_ara(ww_all,ma5.3.2)
-
-print("Relative viral load by ARA compared to average:")
-ma5.3.2$summary.random$ara1 %>% 
-  as_tibble() %>% 
-  dplyr::transmute(ara1=ID,
-                   `exp(beta)`=round(exp(mean),2),
-                   `0.025quant`=round(exp(`0.025quant`),2),
-                   `0.975quant`=format(round(exp(`0.975quant`),2),scientific=FALSE)) %>% 
-  dplyr::left_join(select(corr_all,ara1,ara_name),by = join_by(ara1)) %>% 
-  dplyr::arrange(-`exp(beta)`) %>% 
-  select(-ara1) %>% 
-  column_to_rownames(var="ara_name")
-
-ndays = length(1:max(ww_all$day))
-nara = length(unique(ww_all$ara1))
-ma5.3.2$summary.random$day1 %>% 
-  bind_cols(day=rep(0:(ndays-1),nara),
-            ara1=rep(1:nara,each=ndays)) %>% 
-  left_join(corr_all,by = join_by(ara1)) %>% 
-  ggplot() +
-  geom_hline(yintercept=1,linetype=2,alpha=.5) +
-  geom_ribbon(aes(x=day,ymin=exp(`0.025quant`),ymax=exp(`0.975quant`),fill=ara_name),alpha=.5) +
-  geom_line(aes(x=day,y=exp(mean),colour=ara_name)) +
-  facet_wrap(~ara_name) +
-  scale_colour_discrete(guide="none") +
-  scale_fill_discrete(guide="none") +
-  scale_y_continuous(trans="log",breaks = c(.1,1,10)) +
-  coord_cartesian(ylim=c(.05,20)) +
-  labs(title="Deviations from average time trend by ARA",x="Day",y="Relative viral load by ARA") 
+  summary(ma5.3.2)
+  summary_exp_vl(ma5.3.2,pars="lab|method|hol|weekend")
+  ppp_vl_ara(ww_all,ma5.3.2)
+  
+  print("Relative viral load by ARA compared to average:")
+  ma5.3.2$summary.random$ara1 %>% 
+    as_tibble() %>% 
+    dplyr::transmute(ara1=ID,
+                     `exp(beta)`=round(exp(mean),2),
+                     `0.025quant`=round(exp(`0.025quant`),2),
+                     `0.975quant`=format(round(exp(`0.975quant`),2),scientific=FALSE)) %>% 
+    dplyr::left_join(select(corr_all,ara1,ara_name),by = join_by(ara1)) %>% 
+    dplyr::arrange(-`exp(beta)`) %>% 
+    select(-ara1) %>% 
+    column_to_rownames(var="ara_name")
+  
+  ndays = length(1:max(ww_all$day))
+  nara = length(unique(ww_all$ara1))
+  ma5.3.2$summary.random$day1 %>% 
+    bind_cols(day=rep(0:(ndays-1),nara),
+              ara1=rep(1:nara,each=ndays)) %>% 
+    left_join(corr_all,by = join_by(ara1)) %>% 
+    ggplot() +
+    geom_hline(yintercept=1,linetype=2,alpha=.5) +
+    geom_ribbon(aes(x=day,ymin=exp(`0.025quant`),ymax=exp(`0.975quant`),fill=ara_name),alpha=.5) +
+    geom_line(aes(x=day,y=exp(mean),colour=ara_name)) +
+    facet_wrap(~ara_name) +
+    scale_colour_discrete(guide="none") +
+    scale_fill_discrete(guide="none") +
+    scale_y_continuous(trans="log",breaks = c(.1,1,10)) +
+    coord_cartesian(ylim=c(.05,20)) +
+    labs(title="Deviations from average time trend by ARA",x="Day",y="Relative viral load by ARA") 
 }
 
 #' 
