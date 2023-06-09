@@ -18,6 +18,8 @@
 
 
 #+ results="hide", warnings="false", echo="false"
+# scp savepoints/savepoint_2023-05-15/controls.rds UBELIX:/storage/homefs/jr18s506/projects/multilevel_wbe/savepoints/savepoint_2023-05-15/.
+# scp savepoints/savepoint_2023-05-15/ww1.rds UBELIX:/storage/homefs/jr18s506/projects/multilevel_wbe/savepoints/savepoint_2023-05-15/.
 if(!exists("controls")) controls = readRDS(fs::path("../savepoints/savepoint_2023-05-15/controls.rds"))
 source("setup.R")
 ww1 = readRDS(fs::path("../",controls$savepoint,"ww1.rds"))
