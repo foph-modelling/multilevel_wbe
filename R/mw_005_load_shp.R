@@ -8,7 +8,8 @@
 mw_005_load_shp = function() {
   # load ----
   ara_shp = sf::read_sf("data/spatial/230214_ARA_BAG/230214_ARA_BAG.shp") %>% 
-    dplyr::select(ara_id=ara_id,geometry)
+    dplyr::select(ara_id=ara_id,geometry) %>% 
+    dplyr::filter(ara_id!="100000", ara_id!="296300")
   canton_shp = sf::read_sf("data/spatial/shp.shp")
   see_shp = readRDS("data/spatial/se.Rds")
   

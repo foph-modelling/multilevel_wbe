@@ -62,6 +62,65 @@ kfoldcv_vl = function(dat,mod,k=10,showplot=FALSE) {
   return(output)
 }
 
+avg_time_trend = function(dat,mod) {
+  lims = dat %>% 
+    dplyr::filter(below_lod==0,below_loq==0) %>% 
+    dplyr::summarise(minvl=min(vl),maxvl=max(vl))
+  alldays = 0:(max(dat$day)-1)
+  ndays = length(alldays)
+  corr_periods = dat %>% 
+    dplyr::select(date,period) %>% 
+    dplyr::distinct()
+  corr_days = tibble(day=alldays,
+                     date=seq.Date(from=min(dat$date),to=max(dat$date)-1,by=1)) %>% 
+    left_join(corr_periods,by = join_by(date))
+  tt = mod$summary.random$day %>% 
+    dplyr::mutate(day=ID) %>% 
+    dplyr::left_join(corr_days,by = join_by(day)) %>% 
+    as_tibble() %>% 
+    filter(!is.na(mean),!is.na(date))
+  g = ggplot(tt,aes(x=date)) +
+    geom_hline(yintercept=1,linetype=2,alpha=.5) +
+    geom_ribbon(aes(ymin=exp(`0.025quant`),ymax=exp(`0.975quant`)),alpha=.5) +
+    geom_line(aes(y=exp(mean))) +
+    scale_y_continuous(trans="log",breaks=c(0,.2,.5,1,2,5,10)) +
+    labs(x="Date",y="Relative VL",title="Average time trend")
+  return(g)
+}
+
+
+avg_time_trend_reg = function(dat,mod) {
+  lims = dat %>% 
+    dplyr::filter(below_lod==0,below_loq==0) %>% 
+    dplyr::summarise(minvl=min(vl),maxvl=max(vl))
+  alldays = 0:(max(dat$day)-1)
+  ndays = length(alldays)
+  corr_periods = dat %>% 
+    dplyr::select(date,period) %>% 
+    dplyr::distinct()
+  corr_days = tibble(day=alldays,
+                     date=seq.Date(from=min(dat$date),to=max(dat$date)-1,by=1)) %>% 
+    left_join(corr_periods,by = join_by(date))
+  allnuts2 = dat %>% 
+    dplyr::select(NUTS2,NUTS2_name) %>% 
+    dplyr::distinct() %>% 
+    dplyr::arrange(NUTS2)
+  tt = mod$summary.random$day %>% 
+    dplyr::mutate(day=rep(alldays,nrow(allnuts2)),
+                  NUTS2=rep(allnuts2$NUTS2,each=ndays)) %>% 
+    dplyr::left_join(allnuts2,by = join_by(NUTS2)) %>% 
+    dplyr::left_join(corr_days,by = join_by(day)) %>% 
+    as_tibble() %>% 
+    filter(!is.na(mean),!is.na(date))
+  g = ggplot(tt,aes(x=date)) +
+    geom_hline(yintercept=1,linetype=2,alpha=.5) +
+    # geom_ribbon(aes(ymin=exp(`0.025quant`),ymax=exp(`0.975quant`),fill=NUTS2_name),alpha=.5) +
+    geom_line(aes(y=exp(mean),colour=NUTS2_name)) +
+    scale_y_continuous(trans="log",breaks=c(0,.2,.5,1,2,5,10)) +
+    labs(x="Date",y="Relative VL",title="Average time trend by region")
+  return(g)
+}
+
 # plot posterior predictive plot to viral load data ----
 ppp_vl = function(dat,mod) {
   lims = dat %>% 

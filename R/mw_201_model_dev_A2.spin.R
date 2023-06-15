@@ -32,11 +32,9 @@ select_NUTS2 = "Mittelland"
 ww_reg = ww1 %>%
   # log
   dplyr::mutate(logvl=log(vl)) %>%
+  mutate(vl=if_else(vl==0, 1, vl)) %>%
   # select one ARA per NUTS-2
   dplyr::filter(NUTS2_name==select_NUTS2) %>%
-  # replace zero values by 1
-  dplyr::mutate(vl=if_else(vl==0, 1, vl)) %>%
-  dplyr::filter(!is.na(vl)) %>%
   # create indexes for INLA
   dplyr::mutate(day1=day,
                 ara1=as.numeric(as.factor(ara_n)),
