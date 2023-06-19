@@ -70,7 +70,7 @@ if(controls$rerun_models) {
   ma5.1 = INLA::inla(vl ~ 1 +
                        f(below_loq,model="iid") +
                        f(below_lod,model="iid") +
-                       f(day,model="rw1", scale.model=TRUE, constr=TRUE,
+                       f(day,model="rw2", scale.model=TRUE, constr=TRUE,
                          hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
                        f(weekend,model="linear",mean.linear=0,prec.linear=.2) +
                        f(hol,model="linear",mean.linear=0,prec.linear=.2) +
@@ -212,7 +212,7 @@ if(controls$rerun_models) {
                        f(ara1,model="bym2",
                          graph=path_graph,
                          scale.model = TRUE, constr = TRUE, 
-                         hyper = list(theta1 = list("PCprior", c(1, 0.01)),  # Pr(sd<1) = 0.01, unlikely to have rr>3just based on the spatial confounding
+                         hyper = list(theta1 = list("PCprior", c(1, 0.01)),  # Pr(sd<1) = 0.01, unlikely to have rr>3 just based on the spatial confounding
                                       theta2 = list("PCprior", c(0.5, 0.5)))  # Pr(phi<0.5)=0.5, we state that we believe that the unmeasured spatial confounding is driven 50% from the structured and 50% from the unstructured random effect
                        ) +
                        f(day1,model="rw1", scale.model=TRUE, constr=TRUE,

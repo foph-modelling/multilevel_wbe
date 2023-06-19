@@ -143,8 +143,10 @@ ppp_vl_ara = function(dat,mod) {
   lims = dat %>% 
     dplyr::filter(below_lod==0,below_loq==0) %>% 
     dplyr::summarise(minvl=min(vl),maxvl=max(vl))
-  mod$summary.fitted.values %>% 
-    dplyr::bind_cols(dat) %>% 
+  tt = mod$summary.fitted.values %>% 
+    dplyr::bind_cols(dat)
+  r2 = cor(tt$mean,tt$vl)^2
+  tt %>% 
     ggplot(aes(x=date)) +
     geom_point(aes(y=vl),alpha=.3) +
     geom_ribbon(aes(ymin=`0.025quant`,ymax=`0.975quant`),alpha=.5,fill=cust_cols[1]) +
