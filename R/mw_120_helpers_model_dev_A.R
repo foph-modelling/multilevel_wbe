@@ -139,13 +139,17 @@ ppp_vl = function(dat,mod) {
     coord_cartesian(ylim=c(lims$minvl,lims$maxvl)) +
     labs(x="Date",y="Viral load",title="Posterior predictive plot")
 }
-ppp_vl_ara = function(dat,mod) {
+ppp_vl_ara = function(dat,mod,selection=NULL) {
   lims = dat %>% 
     dplyr::filter(below_lod==0,below_loq==0) %>% 
     dplyr::summarise(minvl=min(vl),maxvl=max(vl))
   tt = mod$summary.fitted.values %>% 
     dplyr::bind_cols(dat)
   r2 = cor(tt$mean,tt$vl)^2
+  if(!is.null(selection)) {
+    tt = tt %>% 
+      dplyr::filter(ara_n %in% selection)
+  }
   tt %>% 
     ggplot(aes(x=date)) +
     geom_point(aes(y=vl),alpha=.3) +
@@ -161,19 +165,61 @@ ppp_vl_ara = function(dat,mod) {
 }
 
 # extract and exponent model parameters ----
-summary_exp_vl = function(mod, pars, order=FALSE) {
+summary_exp_vl = function(mod, pars, order=FALSE, ref=NULL, clean.out=NULL) {
   o = mod$summary.fixed %>% 
-    rownames_to_column() %>% 
+    rownames_to_column("Variable") %>% 
     as_tibble() %>% 
-    dplyr::filter(grepl(pars,rowname)) %>% 
-    dplyr::transmute(rowname=rowname,
-                     `exp(beta)`=round(exp(mean),2),
-                     `0.025quant`=round(exp(`0.025quant`),2),
-                     `0.975quant`=format(round(exp(`0.975quant`),2),scientific=FALSE)) %>% 
-    column_to_rownames()
+    dplyr::filter(grepl(pars,Variable)) %>% 
+    dplyr::transmute(Variable=Variable,
+                     VL_ratio=format(round(exp(mean),2),scientific=FALSE),
+                     lower_bound=format(round(exp(`0.025quant`),2),scientific=FALSE),
+                     upper_bound=format(round(exp(`0.975quant`),2),scientific=FALSE))
   if(order) {
     o = o %>% 
-      dplyr::arrange(-`exp(beta)`)
+      dplyr::arrange(-VL_ratio)
+  }
+  if(!is.null(ref)) {
+    o = o %>% 
+      dplyr::bind_rows(tibble::tibble_row(Variable=ref,VL_ratio="1",lower_bound="-",upper_bound="-"),.)
+  }
+  if(!is.null(clean.out)) {
+    o = o %>% 
+      dplyr::mutate(Variable=gsub(clean.out,"",Variable))
   }
   return(o)
+}
+
+plot_exp_vl = function(mod, pars, order=FALSE, ref=NULL, clean.out=NULL) {
+  o = mod$summary.fixed %>% 
+    rownames_to_column("Variable") %>% 
+    as_tibble() %>% 
+    dplyr::filter(grepl(pars,Variable)) %>% 
+    dplyr::transmute(Variable=Variable,
+                     VL_ratio=format(round(exp(mean),2),scientific=FALSE),
+                     lower_bound=format(round(exp(`0.025quant`),2),scientific=FALSE),
+                     upper_bound=format(round(exp(`0.975quant`),2),scientific=FALSE))
+  if(order) {
+    o = o %>% 
+      dplyr::arrange(-VL_ratio)
+  }
+  if(!is.null(ref)) {
+    o = o %>% 
+      dplyr::bind_rows(tibble::tibble_row(Variable=ref,VL_ratio="1",lower_bound="1",upper_bound="1"),.)
+  }
+  if(!is.null(clean.out)) {
+    o = o %>% 
+      dplyr::mutate(Variable=gsub(clean.out,"",Variable))
+  }
+  g = o %>% 
+    dplyr::mutate(VL_ratio=as.numeric(VL_ratio),
+                                   lower_bound=as.numeric(lower_bound),
+                                   upper_bound=as.numeric(upper_bound)) %>% 
+    ggplot() +
+    geom_hline(yintercept=1,linetype=2) +
+    geom_pointrange(aes(x=Variable,y=VL_ratio,ymin=lower_bound,ymax=upper_bound),colour=cust_cols[2]) +
+    scale_y_continuous(trans="pseudo_log",breaks=c(0,.5,1,2,3,4,5,10)) +
+    theme(axis.text.x = element_text(angle=45,hjust=1)) +
+    labs(y="Relative VL",x=NULL)
+    
+  return(g)
 }

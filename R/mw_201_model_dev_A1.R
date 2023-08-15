@@ -142,8 +142,35 @@ summary_exp_vl(ma5,pars = "method|weekend|hol|test")
 if(controls$compute_cv) kfoldcv_vl(ww_one,ma5)
 ppp_vl(ww_one,ma5)
 
-
+#' ## Model A6: time-varying variance
+#'  
 #' 
+#+ ma6, R.options = list(width = 1000)
+ww_one = ww_one %>% 
+  mutate(p2=ifelse(period==2,1,0),
+         p3=ifelse(period==3,1,0),
+         p4=ifelse(period==4,1,0))
+ma6 = INLA::inla(vl ~ 1 +
+                   f(below_loq,model="iid",constr=FALSE) +
+                   f(day,model="rw2", scale.model=TRUE, constr=TRUE,
+                     hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
+                   f(method,model="linear",mean.linear=0,prec.linear=.2) +
+                   f(weekend,model="linear",mean.linear=0,prec.linear=.2) +
+                   f(hol,model="linear",mean.linear=0,prec.linear=.2) +
+                   f(p2,model="iid",constr=TRUE) +
+                   f(p3,model="iid",constr=TRUE) +
+                   f(p4,model="iid",constr=TRUE),
+                 data = ww_one,
+                 family = "gamma",
+                 control.compute = list(waic=TRUE,config=TRUE),
+                 control.predictor = list(compute=TRUE,link=1))
+summary(ma6)
+summary_exp_vl(ma6,pars = "method|weekend|hol|test")
+if(controls$compute_cv) kfoldcv_vl(ww_one,ma6)
+ppp_vl(ww_one,ma6)
+
+
+  #' 
 #' While the effect size is small, we observe an improvement in the fit. We also see the effect of method change, weekends and holidays.
 #' 
 #' We select this model as it gives the best compromise between accuracy (measured by RMSE), coverage and sharpness. We now apply this model to other ARAs.
