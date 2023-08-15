@@ -58,7 +58,7 @@ mw_131_map_deviation_from_average = function(model,corr,ww,shp,ntop=NULL) {
     coord_cartesian(ylim=c(.05,20)) +
     labs(title=paste0("Top deviations from average time trend (top ",ntop,")"),x="Day",y="Relative viral load by ARA") + 
     theme(axis.text.x = element_text(angle=45,hjust=1))
-  print(g1)
+  # print(g1)
   # map max
   tt3 = tt %>% 
     dplyr::filter(`0.025quant`>0) %>%
@@ -88,7 +88,7 @@ mw_131_map_deviation_from_average = function(model,corr,ww,shp,ntop=NULL) {
     facet_wrap(~var,ncol=2) +
     scale_fill_viridis_c(trans="log10",limits=c(0.1,10)) +
     labs(title="Maximal and minimal deviations from average time trend",fill="Relative VL") 
-  print(g2)
+  # print(g2)
   
   # map period
   qq = tt %>% 
@@ -108,6 +108,6 @@ mw_131_map_deviation_from_average = function(model,corr,ww,shp,ntop=NULL) {
     facet_wrap(~period) +
     scale_fill_viridis_c(trans="log10",limits=c(0.1,10)) +
     labs(title="Maximal and minimal deviations from average time trend",fill="Relative VL") 
-  print(g3)
+  return(list(g1,g2,g3))
 
 }

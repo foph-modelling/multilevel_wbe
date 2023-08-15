@@ -57,13 +57,18 @@ mw_110_map_missing(ww1,shapes)
 mw_103_fig_detect(ww1)
 #' **Figure 3.** SARS-CoV-2 detection in wastewater over time by ARA.
 
+#+ fig_vl2, fig.width=8, fig.height=6
+mw_106_fig_vl_time(ww1)
+#' **Figure 4.** Daily SARS-CoV-2 viral load in wastewater by ARA (removing values below the LOD or LOQ).
+
 #+ fig_vl, fig.width=8, fig.height=10
 mw_104_fig_vl(ww1)
-#' **Figure 4.** Weekly mean SARS-CoV-2 viral load in wastewater by ARA (removing values below the LOD or LOQ). Dashed lines show the delimitation in four periods.
+#' **Figure 5.** Weekly mean SARS-CoV-2 viral load in wastewater by ARA (removing values below the LOD or LOQ). Dashed lines show the delimitation in four periods.
 
 #+ map_vl, fig.width=8, fig.height=6
 mw_111_map_vl(ww1,shapes)
-#' **Figure 5.** Mean SARS-CoV-2 viral load in wastewater by ARA by period.
+#' **Figure 6.** Mean SARS-CoV-2 viral load in wastewater by ARA by period.
+
 
 
 

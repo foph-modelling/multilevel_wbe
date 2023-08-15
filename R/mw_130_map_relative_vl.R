@@ -5,7 +5,7 @@
 # init date: 2023-06-14
 #:::::::::::::::::::::::::::::
 
-mw_130_map_relative_vl = function(model,corr,shp) {
+mw_130_map_relative_vl = function(model,corr,shp,forestplot=FALSE, top=NULL) {
   
   # model = ma5.3.1
   # corr = corr_all_ara
@@ -22,6 +22,10 @@ mw_130_map_relative_vl = function(model,corr,shp) {
     dplyr::arrange(`exp(beta)`) %>% 
     dplyr::mutate(rank=as.factor(row_number()))
   
+  if(!is.null(top)) {
+    tt = dplyr::bind_rows(head(tt,top),tail(tt,top))
+  }
+  
   # merge with map
   mm = shp$ara_shp %>% 
     dplyr::left_join(tt, by = join_by(ara_id)) %>% 
@@ -31,7 +35,8 @@ mw_130_map_relative_vl = function(model,corr,shp) {
   g1 = ggplot(tt) +
     geom_pointrange(aes(x=rank,y=`exp(beta)`,ymin=`0.025quant`,ymax=`0.975quant`,colour=NUTS2_name)) +
     scale_x_discrete(labels=tt$ara_name) +
-    scale_y_continuous(trans="pseudo_log",breaks=c(0,1,2,3,4,5,10)) +
+    scale_y_continuous(trans="pseudo_log",breaks=c(0,.5,1,2,3,4,5,10)) +
+    scale_colour_discrete(guide="none") +
     geom_hline(yintercept=1,linetype=2) +
     coord_flip() +
     theme(legend.position=c(.8,.2),
@@ -44,8 +49,13 @@ mw_130_map_relative_vl = function(model,corr,shp) {
     geom_sf(data=shp$canton_shp,fill="grey95",colour="grey70") +
     geom_sf(data=shp$see_shp,fill="white") +
     geom_sf(data=mm,colour="black",aes(fill=`exp(beta)`)) +
-    scale_fill_viridis_c(trans="log10",limits=c(0.1,10)) +
+    scale_fill_viridis_c(trans="log10") +
     labs(title="Relative viral load by ARA compared to average",fill="Relative VL") 
   
-  return(g2)
+  if(forestplot) {
+    g = g1
+  } else {
+    g = g2
+  }
+  return(g)
 }

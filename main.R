@@ -30,8 +30,10 @@ if(controls$update_data) {
   ww0 = mw_001_load_ww()
   # load and prep corresponding reported tests, cases and hospits
   ms0 = mw_002_load_ms()
-  # load and prep population data by ARA
+  # load and prep population data by ARA # TODO: add population by hectare
   pd0 = mw_003_load_plz_pop()
+  # load SEP
+  se0 = mw_007_load_sep()
   # merge and last prep
   ww1 = mw_004_merge_all(ww0,ms0,pd0)
   # load shape files
@@ -65,6 +67,4 @@ rmarkdown::render("R/mw_201_model_dev_A2.R",
 rmarkdown::render("R/mw_201_model_dev_A3.R",
                   params=list(controls=controls),
                   output_file="../reports/model_dev_A3.html",clean=FALSE)
-
-
 

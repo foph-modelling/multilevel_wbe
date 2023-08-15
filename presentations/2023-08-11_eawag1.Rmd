@@ -1,0 +1,270 @@
+---
+title: "Wastewater-based epidemiology of SARS-CoV-2 in Switzerland"
+author: "Julien Riou"
+date: "11 August 2023"
+output: 
+  beamer_presentation:
+    colortheme: "spruce"
+header-includes: 
+  - \setbeamercovered{transparent=30}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+# controls
+analysis_date = "2023-05-15"
+period_dates = c("2022-05-16","2022-09-05","2023-01-02") 
+controls = list(analysis_date=analysis_date,
+                period_dates=period_dates,
+                savepoint=paste0("../savepoints/savepoint_",analysis_date,"/"))
+# libs
+pacman::p_load(tidyverse,lubridate,ISOweek,INLA,inlabru,sf,cowplot,spdep,scales,flextable)
+# source custom functions
+fili = dir(path="../R/",pattern="mw_[013456789]",full.names = TRUE)
+lapply(X = fili, FUN = function(x) {source(paste0(x), echo=FALSE)})
+# load data
+ww1 = readRDS(fs::path(controls$savepoint,"ww1.rds"))
+shapes = readRDS(fs::path(controls$savepoint,"shapes.rds"))
+# aesthetics
+theme_set(theme_bw())
+theme_update(text = element_text(size=7))
+cust_cols = c("dodgerblue","firebrick2","goldenrod2")
+```
+
+
+## Background
+
+Wastewater surveillance of SARS-CoV-2 in Switzerland:
+
+- data available from 7 February 2022
+				
+- \alert{118 ARAs} (fluctuating)
+			
+- various sampling frequencies (from weekly to daily)
+				
+- samples sent to \alert{9 different laboratories}
+				
+- 20,535 total measurements as of 14 May, 2023
+
+
+## Data
+
+```{r data_mis1, fig.height=4,fig.width=5.5}
+ww1 %>% 
+  ggplot() +
+    geom_point(aes(x=date,y=ara_kt,colour=kt),size=.3) +
+    scale_y_discrete(limits=rev) +
+    scale_colour_discrete(guide="none") +
+    theme(axis.text.y = element_text(size=3)) +
+    labs(x="Date",y="ARA")
+```
+
+## Data
+
+```{r data_mis2, fig.height=3.5,fig.width=4.5, fig.cap="Number of viral load measurements by ARA."}
+mw_110_map_missing(ww1,shapes)
+```
+
+## Data
+
+Large \alert{heterogeneity} across time and space:
+
+```{r data_vl1, fig.height=2.3,fig.width=4,fig.cap="Daily SARS-CoV-2 viral load in wastewater by ARA (removing values below the LOD or LOQ)."}
+mw_106_fig_vl_time(ww1)
+```
+
+## Objectives
+
+1. Disentangle the \alert{various sources of heterogeneity}
+
+- laboratory, quantification method, systematic temporal or spatial effects, remaining noise... \pause\bigskip
+		
+2. Extract a clean, ``noise-free'' \alert{temporal signal}
+
+- at the national and/or regional level \pause\bigskip
+		
+3. Assess the \alert{agreement} with other types of surveillance 
+
+- confirmed cases, hospitalizations, Sentinella, CH-SUR, pooled tests... \pause\bigskip
+
+4. Forecasting/nowcasting 
+
+- historical data, LFO validation \pause\bigskip
+
+5. Future surveillance strategies
+
+- site selection, frequency, rotation
+
+## Methods
+
+\alert{Spatial regression} model using INLA accounting for:
+
+- population covered \pause
+
+- limits of detection (LOD) and of quantification (LOQ) \pause
+
+- \alert{laboratory} and quantification method \pause
+
+- systematic temporal effects (public holidays, weekends) \pause
+
+- \alert{systematic bias} by ARA 
+
+## Methods
+
+Technical aspects:
+
+- gamma likelihood (strictly positive)  \pause
+
+- logarithmic link implying \alert{multiplicative effects} \pause
+
+- iterative model development (model selection tools) \pause
+
+- \alert{random walks} for temporal trends \pause
+
+- (for now) iid for spatial correlation (BYM didn't improve the fit)
+
+<!-- - \alert{Besag-York-Mollié} for spatial correlation (neighbors) -->
+			
+## Results
+
+Posterior predictive check (\alert{model fit}) is quite good.
+
+```{r res_fit1, fig.height=7,fig.width=12,fig.cap="Model fit."}
+ma5.3.2 = readRDS(file=paste0(controls$savepoint,"ma5.3.2.rds"))
+ma5.3.3 = readRDS(file=paste0(controls$savepoint,"ma5.3.3.rds"))
+ww_all = readRDS(file=paste0(controls$savepoint,"ww_all.rds"))
+corr_all_ara = readRDS(file=paste0(controls$savepoint,"corr_all_ara.rds"))
+ppp_vl_ara(ww_all,ma5.3.3) + facet_wrap(~ara_name,ncol=10) + labs(title=NULL)
+```
+
+## Results
+
+Posterior predictive check (\alert{model fit}) is generally quite good.
+
+```{r res_fit2, fig.height=2.3,fig.width=4,fig.cap="Model fit."}
+ppp_vl_ara(ww_all,ma5.3.3,selection=1:6) + facet_wrap(~ara_name,ncol=3) + labs(title=NULL)
+```
+
+## Results
+
+Effect of \alert{laboratory} and method (reference is ALTGR_0):
+
+- $\exp(\beta)$ can be interpreted as a \alert{relative viral load}, e.g., the viral load is *on average* 1.43 times higher (0.99 to 2.07) in EAWAG_0 than ALTGR_0
+ 
+```{r res1,  out.width="70%", fig.height=2.1,fig.width=4,fig.cap="Estimated effect of laboratory (laboratory name) and method change (marked by 0 and 1)."}
+plot_exp_vl(ma5.3.3,pars="lab|method", ref="ALTGR_0", clean.out = "lab_method") 
+```
+
+
+## Results
+
+Effect of \alert{public holidays} and \alert{weekends}:
+
+- no clear influence
+ 
+```{r res2,  out.width="50%", fig.height=2.1,fig.width=3,fig.cap="Estimated effect of holidays and weekends."}
+plot_exp_vl(ma5.3.3,pars="weekend|hol", ref=NULL) + coord_cartesian(ylim=c(.5,2))
+```
+
+## Results
+
+Effect of \alert{specific ARAs}:
+
+- some ARAs have consistently higher or lower viral loads
+
+- may be issues with \alert{population} covered (tourism...)
+ 
+```{r res3,  out.width="50%", fig.height=3.5,fig.width=4,fig.cap="Estimated ARA-specific effects."}
+mw_130_map_relative_vl(ma5.3.3,corr_all_ara,shapes,forestplot=TRUE, top=10) + 
+  labs(title=NULL,y="Relative VL") 
+```
+
+## Results
+
+Effect of \alert{specific ARAs}:
+
+- some ARAs have consistently higher or lower viral loads
+
+- may be issues with \alert{population} covered (tourism...)
+ 
+```{r res4,  out.width="80%", fig.height=3.5,fig.width=4,fig.cap="Estimated ARA-specific effects."}
+mw_130_map_relative_vl(ma5.3.3,corr_all_ara,shapes,forestplot=FALSE) + 
+  labs(title=NULL,y="Relative VL") 
+```
+
+
+## Results
+
+Average temporal trend at the \alert{national} level:
+
+- accounts for all aspects described before
+
+```{r res5,  out.width="80%", fig.height=3,fig.width=5,fig.cap="Estimated average temporal trend at the national level."}
+avg_time_trend(ww_all,ma5.3.2) +
+  labs(title=NULL,y="Relative VL") 
+```
+
+
+## Results
+
+Average temporal trend at the \alert{regional} level:
+
+- accounts for all aspects described before
+ 
+```{r res6,  out.width="80%", fig.height=3,fig.width=5,fig.cap="Estimated average temporal trend at the regional level."}
+avg_time_trend_reg(ww_all,ma5.3.3) +
+  labs(title=NULL,y="Relative VL",colour="NUTS2 region") +
+  theme(legend.position=c(.4,.18),
+        legend.background=element_blank(),
+        legend.direction = "horizontal")
+```
+
+
+
+
+## Results
+
+\alert{Residual deviations} from the average temporal trend:
+
+- come on top of all aspects described before
+ 
+```{r res7,  out.width="80%", fig.height=3,fig.width=5,fig.cap="Residual deviations from the average temporal trend (top 12 on absolute value)."}
+mw_131_map_deviation_from_average(ma5.3.3,corr_all_ara,ww_all,shapes,12)[[1]]  +
+  labs(title=NULL,y="Relative VL",colour="NUTS2 region")
+```
+
+
+## Discussion
+
+1. Disentangle the \alert{various sources of heterogeneity}
+
+- important heterogeneity across \alert{laboratories} and \alert{ARAs}
+
+- no clear effect of weekends and public holidays
+
+- possible issue with \alert{population} covered (tourism and/or mistake)
+
+		
+## Discussion
+
+2. Extract a clean, ``noise-free'' \alert{temporal signal}
+
+- doable at both the national and regional level
+
+- can look at residuals to identify special situations (Neuchâtel-Jura / Berner Oberland)
+		
+		
+# Discussion
+
+3. Assess the \alert{agreement} with other types of surveillance 
+
+- still ongoing
+
+- idea: joint modelling of reported cases/hospitalisations and viral load
+
+- discussions planned with France (Sorbonne University, Prof. Boëlle) and UK (Imperial, Prof. Blangiardo)
+
+
+
+
+
