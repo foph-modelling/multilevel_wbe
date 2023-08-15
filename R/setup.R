@@ -21,7 +21,7 @@ pacman::p_load(data.table,
                scales)
 
 # source functions ----
-fili = dir(pattern="mw_[013456789]")
+fili = dir(path = 'R', pattern="mw_[013456789]",full.names = TRUE)
 lapply(X = fili, FUN = function(x) {source(paste0(x), echo=FALSE)})
 
 # create savepoint repertory if not existing ----
