@@ -41,3 +41,7 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# Large data files
+*employment_statistics*
+*population_statistics*
