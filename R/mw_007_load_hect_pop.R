@@ -55,14 +55,16 @@ mw_007_load_hect_pop = function() {
   
   # extract proportions of plzs actually in catchments - each plz/catchment combination is it's own polygon
   suppressWarnings({suppressMessages({
-    intersections = st_intersection(catchments, plz_catch_area)
+    intersections = st_intersection(catchments, plz_area)
   })})
+  
+  
   
   
   # join population data and plz-catchment shapes data to extract all hectares within each polygon
   # NB the center of the hectare is used for location - this could be changed to include the proportion
   # of the hectare * population but this is quite involved.
-  catch_pop_data = st_join(intersections, st_transform(pop_data_slim_sf, crs=catchment_crs))
+  catch_pop_data = st_join(st_transform(pop_data_slim_sf, crs=catchment_crs), intersections, )
   catch_pop_data_dt = data.table(catch_pop_data)[,c('ara_id', 'ara_name', 'PLZ', 'N_KOORD', 'E_KOORD', 'B21BTOT')]
   
   catch_pop_data_dt[, plz_catch_pop := sum(B21BTOT), by=c('ara_id', 'PLZ')]
@@ -75,4 +77,17 @@ mw_007_load_hect_pop = function() {
   
   return(ara_pop)
   
+  
+  suppressWarnings({suppressMessages({
+    plz_pop_data = st_join(plz_area, st_transform(pop_data_slim_sf, crs=catchment_crs))
+      })})
+  
+  plz_pop_data_dt = data.table(st_drop_geometry(plz_pop_data))
+  
+  plz_pops = unique(plz_pop_data_dt[, c('PLZ', 'plz_pop')])
+  
+  
+                    
 }
+
+
