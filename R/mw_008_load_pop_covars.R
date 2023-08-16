@@ -135,8 +135,6 @@ mw_008_load_pop_covars = function(scale='ARA') {
     plz_pop_data_age = data.table(st_join(plz_area, st_transform(pop_data_age_sf, crs=st_crs(plz_area))))
     
     
-    # Assuming the existing data frame is named 'population_df'
-    
     plz_age_cols = c('PLZ', 'B21BTOT', males, fmale)
     
     plz_pop_data_age_simp = plz_pop_data_age[, ..plz_age_cols]
