@@ -12,16 +12,18 @@ pacman::p_load(data.table,
                lubridate,
                ISOweek,
                INLA,
+               inlabru,
                sf,
                splines,
                cowplot,
                #flextable,
                spdep,
                jsonlite,
-               scales)
+               scales, 
+               units)
 
 # source functions ----
-fili = dir(path = 'R', pattern="mw_[013456789]",full.names = TRUE)
+fili = dir(pattern="mw_[013456789]")
 lapply(X = fili, FUN = function(x) {source(paste0(x), echo=FALSE)})
 
 # create savepoint repertory if not existing ----
@@ -32,12 +34,12 @@ dir.create(file.path("./", controls$savepoint), showWarnings = FALSE)
 
 # small custom functions ----
 qsum_range = function(x) {
-    r = paste0(formatC(median(x,na.rm=TRUE), format="g",big.mark=",", digits=0),
-               " (range: ",
-               formatC(min(x,na.rm=TRUE), format="g", big.mark=",", digits=0),
-               " to ",
-               formatC(max(x,na.rm=TRUE), format="g", big.mark=",", digits=0),
-               ")")
+  r = paste0(formatC(median(x,na.rm=TRUE), format="g",big.mark=",", digits=0),
+             " (range: ",
+             formatC(min(x,na.rm=TRUE), format="g", big.mark=",", digits=0),
+             " to ",
+             formatC(max(x,na.rm=TRUE), format="g", big.mark=",", digits=0),
+             ")")
 }
 
 # aesthetics ----
