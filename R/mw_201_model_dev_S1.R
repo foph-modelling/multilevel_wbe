@@ -47,7 +47,7 @@ ww_all = ww1 %>%
                 lab_method_n=as.numeric(as.factor(lab_method)))
 saveRDS(ww_all,file=paste0("../",controls$savepoint,"ww_all.rds"))
 
-ww_all = ww_all %>% filter(day1<20)
+ww_all = ww_all %>% filter(day1<60)
 
 ww_all = ww_all %>% complete(ara_id, day)
 
@@ -390,7 +390,8 @@ if(controls$rerun_models) {
                    link=1,
                    compute = TRUE,
                    A = inla.stack.A(stk.e)
-                 )
+                 ), 
+                 safe=TRUE
                  
   )
   
