@@ -134,7 +134,6 @@ stk.e =
                             lab_method=ww_all$lab_method,
                             day=ww_all$day, 
                             weekend=ww_all$weekend,
-                            hol=ww_all$hol, 
                             ara1=ww_all$ara1, 
                             day1=ww_all$day1, 
                             ara2=ww_all$ara2), s = indexs)
@@ -252,12 +251,11 @@ stk.e =
     data = list(y = ww_all$vl_stand),
     A = list(1,A),
     effects = list(data.frame(beta = rep(1, length(ww_all$ara_id)),
-                              below_loq=ww_all$below_loq, 
-                              below_lod=ww_all$below_lod, 
+                              below_loq=as.numeric(ww_all$below_loq), 
+                              below_lod=as.numeric(ww_all$below_lod), 
                               lab_method=ww_all$lab_method,
                               day=ww_all$day, 
                               weekend=ww_all$weekend,
-                              hol=ww_all$hol, 
                               ara1=ww_all$ara1, 
                               day1=ww_all$day1, 
                               ara2=ww_all$ara2), 
@@ -338,7 +336,6 @@ formula = y ~ 0 + beta +
   f(day,model="rw2", scale.model=TRUE, constr=TRUE,
     hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
   f(weekend,model="linear",mean.linear=0,prec.linear=.2) +
-  f(hol,model="linear",mean.linear=0,prec.linear=.2) +
   f(s, 
     model = spde, 
     group = s.group, 
@@ -373,7 +370,6 @@ formula = y ~ 0 + beta +
   f(day,model="rw2", scale.model=TRUE, constr=TRUE,
     hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
   f(weekend,model="linear",mean.linear=0,prec.linear=.2) +
-  f(hol,model="linear",mean.linear=0,prec.linear=.2) +
   f(s, 
     model = spde, 
     group = s.group, 
@@ -394,7 +390,6 @@ if(controls$rerun_models) {
                  safe=TRUE
                  
   )
-  
   saveRDS(ms5.3.1,file=paste0("../",controls$savepoint,"ma5.3.1.rds"))
 } else {
   ms5.3.1 = readRDS(file=paste0("../",controls$savepoint,"ma5.3.1.rds"))
