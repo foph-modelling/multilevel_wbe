@@ -25,7 +25,7 @@ ww_all = ww1 %>%
                 lab_method_n=as.numeric(as.factor(lab_method)))
 saveRDS(ww_all,file=paste0("../",controls$savepoint,"ww_all.rds"))
 
-ww_all = ww_all %>% filter(day1<60)
+ww_all = ww_all %>% filter(day1<60 & NUTS2_name=='Mittelland')
 ww_all = ww_all %>% complete(ara_id, day)
 
 # correspondence table
@@ -128,7 +128,6 @@ formula = y ~ 0 + beta +
   f(day,model="rw2", scale.model=TRUE, constr=TRUE,
     hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
   f(weekend,model="linear",mean.linear=0,prec.linear=.2) +
-  f(hol,model="linear",mean.linear=0,prec.linear=.2) +
   f(hol,model="linear",mean.linear=0,prec.linear=.2) +
   f(s, 
     model = spde, 
@@ -241,3 +240,48 @@ ms4_plot = ggplot(dp_s[below_lod==0 & below_loq==0, ]) +
   geom_ribbon(aes(x=day1, ymin=pred_lower, ymax=pred_upper), fill='red', alpha=0.2)+
   facet_wrap(~ara_id)+
   scale_y_continuous(trans='log')
+
+
+formula = y ~ 1 + beta +  
+  f(below_loq,model="iid") +
+  f(below_lod,model="iid") +
+  f(weekend,model="linear",mean.linear=0,prec.linear=.2) +
+  f(weekend,model="linear",mean.linear=0,prec.linear=.2) +
+  f(hol,model="linear",mean.linear=0,prec.linear=.2) +
+  lab_method + 
+  f(s, 
+    model = spde, 
+    group = s.group, 
+    control.group = list(model = "ar1", hyper = list(theta = list(prior = "pccor1", param = c(0, 0.9)))))
+
+
+
+# run the model with Gaussian likelihood - allows negative values (consistent with Blangiardo)
+
+ms5.3.5 = inla(formula,
+               family='gaussian',
+               data = inla.stack.data(stk.e),
+               control.compute = list(config=TRUE),
+               control.predictor = list(
+                 compute = TRUE,
+                 A = inla.stack.A(stk.e)
+               )
+               
+)
+
+
+dp_s = copy(ww_all)
+
+index_s <- inla.stack.index(stack = stk.e, tag = "est")$data
+dp_s$pred_mean = ms5.3.5$summary.fitted.values[index_s, "mean"]
+dp_s$pred_lower = ms5.3.5$summary.fitted.values[index_s, "0.025quant"]
+dp_s$pred_upper = ms5.3.5$summary.fitted.values[index_s, "0.975quant"]
+
+
+ms5_plot = ggplot(dp_s[below_lod==0 & below_loq==0, ]) + 
+  geom_point(aes(x=day1, y=vl_stand), size=0.3) + 
+  geom_line(aes(x=day1, y=pred_mean), color='red', linewidth=0.2, alpha=0.8)+
+  geom_ribbon(aes(x=day1, ymin=pred_lower, ymax=pred_upper), fill='red', alpha=0.2)+
+  facet_wrap(~ara_id)+
+  scale_y_continuous(trans='log')
+
