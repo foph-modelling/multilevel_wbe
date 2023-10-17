@@ -176,7 +176,7 @@ summary_exp_vl = function(mod, pars, order=FALSE, ref=NULL, clean.out=NULL) {
                      upper_bound=format(round(exp(`0.975quant`),2),scientific=FALSE))
   if(order) {
     o = o %>% 
-      dplyr::arrange(-VL_ratio)
+      dplyr::arrange(rev(VL_ratio))
   }
   if(!is.null(ref)) {
     o = o %>% 
@@ -200,7 +200,7 @@ plot_exp_vl = function(mod, pars, order=FALSE, ref=NULL, clean.out=NULL) {
                      upper_bound=format(round(exp(`0.975quant`),2),scientific=FALSE))
   if(order) {
     o = o %>% 
-      dplyr::arrange(-VL_ratio)
+      dplyr::arrange(rev(VL_ratio))
   }
   if(!is.null(ref)) {
     o = o %>% 

@@ -43,8 +43,10 @@ ww_all = ww1 %>%
   dplyr::mutate(lab2=if_else(lab=="KLBS","KLZH",lab),
                 lab_n2=as.numeric(as.factor(lab2))) %>% 
   # group lab and method
-  dplyr::mutate(lab_method=paste0(lab2,"_",method),
-                lab_method_n=as.numeric(as.factor(lab_method)))
+  dplyr::mutate(lab_method=factor(paste0(lab2,"_",method)),
+                lab_method=relevel(lab_method, ref="EAWAG_0"),
+                lab_method_n=as.numeric(lab_method))
+saveRDS(ww_all,file=paste0("../",controls$savepoint,"ww_all.rds"))
 
 # correspondence table
 corr_all = ww_all %>% 
@@ -55,6 +57,7 @@ corr_all_ara = ww_all %>%
   group_by(ara1,ara_name,ara_id,kt,NUTS2_name) %>% 
   count() %>% 
   ungroup() 
+saveRDS(corr_all_ara,file=paste0("../",controls$savepoint,"corr_all_ara.rds"))
 
 if(!controls$rerun_models) {
   mw_100_desc_table(ww_all) %>%
@@ -172,6 +175,8 @@ avg_time_trend_reg(ww_all,ma5.3.3)
 mw_130_map_relative_vl(ma5.3.3,corr_all_ara,shapes)
 #+ ma5.3.3d, fig.width=8, fig.height=6,  R.options = list(width = 1000)
 mw_131_map_deviation_from_average(ma5.3.3,corr_all_ara,ww_all,shapes,12)
+
+
 
 #' 
 #' 

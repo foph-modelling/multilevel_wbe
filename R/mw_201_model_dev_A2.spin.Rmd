@@ -75,7 +75,7 @@ if(controls$rerun_models) {
   ma5.1 = INLA::inla(vl ~ 1 +
                        f(below_loq,model="iid") +
                        f(below_lod,model="iid") +
-                       f(day,model="rw1", scale.model=TRUE, constr=TRUE,
+                       f(day,model="rw2", scale.model=TRUE, constr=TRUE,
                          hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
                        f(weekend,model="linear",mean.linear=0,prec.linear=.2) +
                        f(hol,model="linear",mean.linear=0,prec.linear=.2) +
@@ -92,7 +92,8 @@ summary(ma5.1)
 summary_exp_vl(ma5.1,pars="lab|method|hol|weekend")
 ppp_vl_ara(ww_reg,ma5.1) 
 print("Relative viral load by ARA compared to reference 'Aarwangen (Zala)':")
-summary_exp_vl(ma5.1,pars="ara_n",order=TRUE)
+summary_exp_vl(ma5.1,pars="ara_n",order=TRUE) %>% 
+  column_to_rownames(var="Variable")
 ```
 
 We observe a large heterogeneity across ARAs, with highest relative viral load compared to reference in Lauterbrunnen, Interlaken and Grindelwald and lower relative viral load in Bern, La Chaux-de-Fonds and Emmental (note that viral load already accounts for population size). 
@@ -223,7 +224,7 @@ if(controls$rerun_models) {
                        f(ara1,model="bym2",
                          graph=path_graph,
                          scale.model = TRUE, constr = TRUE, 
-                         hyper = list(theta1 = list("PCprior", c(1, 0.01)),  # Pr(sd<1) = 0.01, unlikely to have rr>3just based on the spatial confounding
+                         hyper = list(theta1 = list("PCprior", c(1, 0.01)),  # Pr(sd<1) = 0.01, unlikely to have rr>3 just based on the spatial confounding
                                       theta2 = list("PCprior", c(0.5, 0.5)))  # Pr(phi<0.5)=0.5, we state that we believe that the unmeasured spatial confounding is driven 50% from the structured and 50% from the unstructured random effect
                        ) +
                        f(day1,model="rw1", scale.model=TRUE, constr=TRUE,

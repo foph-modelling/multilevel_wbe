@@ -8,12 +8,12 @@
 
 # Block 0: controls and set-up --------------------------------------------
 
-analysis_date = "2023-05-15"
-data_date = "2023-03-14" # name of the repertory with fixed data (up-to-date wastewater data is downloaded directly at every run)
+analysis_date = "2023-09-29"
+data_date = "2023-09-29" # name of the repertory with fixed data (up-to-date wastewater data is downloaded directly at every run)
 data_path = "../../02_data/wastewater/"
-period_dates = c("2022-05-16","2022-09-05","2023-01-02") # set at the lowest points between waves, on Mondays so weeks are not cut
-controls = list(update_data=FALSE, # set to TRUE before sourcing to update the data
-                rerun_models=FALSE, # only applies to large models
+period_dates = c("2022-05-16","2022-09-05","2023-01-02","2023-07-03") # set at the lowest points between waves, on Mondays so weeks are not cut
+controls = list(update_data=TRUE, # set to TRUE before sourcing to update the data
+                rerun_models=TRUE, # only applies to large models
                 compute_cv=FALSE, 
                 data_date=data_date,
                 analysis_date=analysis_date,
@@ -55,16 +55,16 @@ if(FALSE) {
 # data description
 rmarkdown::render("R/mw_200_data_description.R",
                   params=list(controls=controls),
-                  output_file="../reports/data_description.html",clean=FALSE)
+                  output_file=file.path("../",controls$savepoint,"data_description.html"),clean=FALSE)
 
 # model development
 rmarkdown::render("R/mw_201_model_dev_A1.R",
                   params=list(controls=controls),
-                  output_file="../reports/model_dev_A1.html",clean=FALSE)
+                  output_file=file.path("../",controls$savepoint,"model_dev_A1.html"),clean=FALSE)
 rmarkdown::render("R/mw_201_model_dev_A2.R",
                   params=list(controls=controls),
-                  output_file="../reports/model_dev_A2.html",clean=FALSE)
+                  output_file=file.path("../",controls$savepoint,"model_dev_A2.html"),clean=FALSE)
 rmarkdown::render("R/mw_201_model_dev_A3.R",
                   params=list(controls=controls),
-                  output_file="../reports/model_dev_A3.html",clean=FALSE)
+                  output_file=file.path("../",controls$savepoint,"model_dev_A3.html"),clean=FALSE)
 

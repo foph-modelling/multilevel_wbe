@@ -79,7 +79,7 @@ mw_104_fig_vl(ww1)
 
 **Figure 5.** Weekly mean SARS-CoV-2 viral load in wastewater by ARA (removing values below the LOD or LOQ). Dashed lines show the delimitation in four periods.
 
-```{r map_vl, fig.width=8, fig.height=6}
+```{r map_vl, fig.width=8, fig.height=14}
 mw_111_map_vl(ww1,shapes)
 ```
 

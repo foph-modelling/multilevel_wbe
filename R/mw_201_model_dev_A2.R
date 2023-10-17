@@ -87,7 +87,8 @@ summary(ma5.1)
 summary_exp_vl(ma5.1,pars="lab|method|hol|weekend")
 ppp_vl_ara(ww_reg,ma5.1) 
 print("Relative viral load by ARA compared to reference 'Aarwangen (Zala)':")
-summary_exp_vl(ma5.1,pars="ara_n",order=TRUE)
+summary_exp_vl(ma5.1,pars="ara_n",order=TRUE) %>% 
+  column_to_rownames(var="Variable")
 
 #' We observe a large heterogeneity across ARAs, with highest relative viral load compared to reference in Lauterbrunnen, Interlaken and Grindelwald and lower relative viral load in Bern, La Chaux-de-Fonds and Emmental (note that viral load already accounts for population size). 
 #'  
