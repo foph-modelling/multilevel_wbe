@@ -93,13 +93,14 @@ avg_time_trend_reg = function(dat,mod) {
   lims = dat %>% 
     dplyr::filter(below_lod==0,below_loq==0) %>% 
     dplyr::summarise(minvl=min(vl),maxvl=max(vl))
-  alldays = 0:(max(dat$day)-1)
+  alldays = unique(dat$day)
+  alldays = alldays[order(alldays)]
   ndays = length(alldays)
   corr_periods = dat %>% 
     dplyr::select(date,period) %>% 
     dplyr::distinct()
-  corr_days = tibble(day=alldays,
-                     date=seq.Date(from=min(dat$date),to=max(dat$date)-1,by=1)) %>% 
+  corr_days = tibble(date=seq.Date(from=min(dat$date),to=max(dat$date)-1,by=1)) %>% 
+    mutate(day=row_number()-1) %>% 
     left_join(corr_periods,by = join_by(date))
   allnuts2 = dat %>% 
     dplyr::select(NUTS2,NUTS2_name) %>% 

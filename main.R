@@ -8,7 +8,7 @@
 
 # Block 0: controls and set-up --------------------------------------------
 
-analysis_date = "2023-09-29"
+analysis_date = "2023-10-17"
 data_date = "2023-09-29" # name of the repertory with fixed data (up-to-date wastewater data is downloaded directly at every run)
 data_path = "../../02_data/wastewater/"
 period_dates = c("2022-05-16","2022-09-05","2023-01-02","2023-07-03") # set at the lowest points between waves, on Mondays so weeks are not cut
@@ -32,12 +32,12 @@ if(controls$update_data) {
   ms0 = mw_002_load_ms()
   # load and prep population data by ARA # TODO: add population by hectare
   pd0 = mw_003_load_plz_pop()
-  # load SEP
-  se0 = mw_007_load_sep()
   # merge and last prep
   ww1 = mw_004_merge_all(ww0,ms0,pd0)
   # load shape files
   shapes = mw_005_load_shp()
+  # load SEP
+  se0 = mw_007_load_sep(shp=shapes)
   # save
   saveRDS(ww1,file=fs::path(controls$savepoint,"ww1.rds"))
   saveRDS(shapes,file=fs::path(controls$savepoint,"shapes.rds"))

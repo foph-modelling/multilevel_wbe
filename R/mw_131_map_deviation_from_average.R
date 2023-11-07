@@ -7,11 +7,11 @@
 
 mw_131_map_deviation_from_average = function(model,corr,ww,shp,ntop=NULL) {
   
-  model = ma5.3.3
-  corr = corr_all_ara
-  shp = shapes
-  ww = ww_all
-  
+  # model = ma5.3.3
+  # corr = corr_all_ara
+  # shp = shapes
+  # ww = ww_all
+  # 
   # extract ARA trends
   nara = length(unique(ww$ara1))
   corr_periods = ww %>% 
