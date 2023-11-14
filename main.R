@@ -34,8 +34,10 @@ if(controls$update_data) {
   pd0 = mw_003_load_plz_pop()
   # load SEP
   se0 = mw_007_load_sep()
+  # load population covariates
+  pc0 = mw_008_load_pop_covars(scale = 'ARA')
   # merge and last prep
-  ww1 = mw_004_merge_all(ww0,ms0,pd0)
+  ww1 = mw_004_merge_all(ww0,ms0,pd0,pc0, complete_dates=FALSE)
   # load shape files
   shapes = mw_005_load_shp()
   # save

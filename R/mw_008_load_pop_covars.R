@@ -21,6 +21,15 @@ mw_008_load_pop_covars = function(scale='ARA') {
   catchments = st_make_valid(catchments)
   catchment_crs = st_crs(catchments)
   
+
+  plz_area = st_read('data/spatial/plz/PLZO_SHP_LV95/PLZO_PLZ.shp')
+  # set to required crs
+
+  plz_area = st_transform(plz_area, crs = catchment_crs)
+  
+  #merge split polygons
+  plz_area = rmapshaper::ms_dissolve(plz_area,'PLZ')
+  
   ## load population data (Total population by hectare (2021) (100mx100m squares))
   swissboundaries_BFS_NATION = st_read('data/spatial/bfs/swissboundaries3d_2023-01_2056_5728.shp/swissBOUNDARIES3D_1_4_TLM_LANDESGEBIET.shp')
   bfs_crs = st_crs(swissboundaries_BFS_NATION)
@@ -38,8 +47,8 @@ mw_008_load_pop_covars = function(scale='ARA') {
   # Define colulms of interest for model covariats 
   males = names(pop_data)[grepl('^B\\d{2}(BM)(0|1)', names(pop_data))] 
   fmale = names(pop_data)[grepl('^B\\d{2}(BW)(0|1)', names(pop_data))] 
-  non_CH_EU = c('B21B28', 'B21B29', 'B21B30')
-  select_cols = c('B21BTOT', males, fmale, non_CH_EU, "E_KOORD", "N_KOORD")
+  nec = c('B21B28', 'B21B29', 'B21B30')
+  select_cols = c('B21BTOT', males, fmale, nec, "E_KOORD", "N_KOORD")
   
   
   # Trim data + make it an sf object to allow selection by polygon
@@ -60,14 +69,14 @@ mw_008_load_pop_covars = function(scale='ARA') {
   
   if(scale == 'ARA'){
     ### POPULATION DATA
-    catch_pop_data = st_join(st_transform(pop_data_slim_sf, crs=st_crs(plz_catch_area)), intersections)
+    catch_pop_data = st_join(st_transform(pop_data_slim_sf, crs=catchment_crs), intersections)
     catch_pop_data_no_geom = st_drop_geometry(catch_pop_data)[,c('ara_id', 'PLZ', select_cols )]
     catch_pop_data_dt = data.table(data.frame(catch_pop_data_no_geom))
     
-    catch_cov_cols = c('ara_id', 'PLZ', 'B21BTOT', males, fmale, non_CH_EU)
+    catch_cov_cols = c('ara_id', 'PLZ', 'B21BTOT', males, fmale, nec)
     
     catch_pops_covs = catch_pop_data_dt[, ..catch_cov_cols]
-    catch_pops_covs_summed = catch_pops_covs[, lapply(.SD, sum, na.rm=TRUE), by=c('ara_id'), .SDcols=c('B21BTOT', males, fmale, non_CH_EU) ] 
+    catch_pops_covs_summed = catch_pops_covs[, lapply(.SD, sum, na.rm=TRUE), by=c('ara_id'), .SDcols=c('B21BTOT', males, fmale, nec) ] 
     
     
     
@@ -75,12 +84,12 @@ mw_008_load_pop_covars = function(scale='ARA') {
     over_65_cols = grep("^B\\d{2}(BM|BW)(1[4-9]|2\\d|3[0-9])$",c(males, fmale), value = TRUE)
     
     
-    catch_pops_covs_summed[, prop_under_20 := rowSums(.SD) / B21BTOT, .SDcols = under_20_cols  ]
-    catch_pops_covs_summed[, prop_over_65 := rowSums(.SD) / B21BTOT, .SDcols = over_65_cols  ]
+    catch_pops_covs_summed[, u20 := rowSums(.SD) / B21BTOT, .SDcols = under_20_cols  ]
+    catch_pops_covs_summed[, o65 := rowSums(.SD) / B21BTOT, .SDcols = over_65_cols  ]
     
-    catch_pops_covs_summed[, non_ch_eu := rowSums(.SD), .SDcols = non_CH_EU]
-    catch_pops_covs_summed[, prop_non_ch_eu := non_ch_eu/B21BTOT]
-    catch_pops_covs_summed$prop_non_ch_eu = nafill(catch_pops_covs_summed$prop_non_ch_eu,fill=0)
+    catch_pops_covs_summed[, nec := rowSums(.SD), .SDcols = nec]
+    catch_pops_covs_summed[, nec := nec/B21BTOT]
+    catch_pops_covs_summed$nec = nafill(catch_pops_covs_summed$nec,fill=0)
     
     catch_area = data.table(
       ara_id = catchments$ara_id, 
@@ -89,8 +98,8 @@ mw_008_load_pop_covars = function(scale='ARA') {
     catch_pops_covs_summed[, pop_dens := drop_units(B21BTOT/area)]
     
     
-    catchement_population_covariates = catch_pops_covs_summed[, c('ara_id', 'B21BTOT', 'prop_under_20', 'prop_over_65', 'prop_non_ch_eu', 'pop_dens')]
-    colnames(catchement_population_covariates) = c('ara_id', 'total_pop', 'prop_under_20', 'prop_over_65', 'prop_non_ch_eu', 'pop_dens')
+    catchement_population_covariates = catch_pops_covs_summed[, c('ara_id', 'B21BTOT', 'u20', 'o65', 'nec', 'pop_dens')]
+    colnames(catchement_population_covariates) = c('ara_id', 'total_pop', 'u20', 'o65', 'nec', 'pop_dens')
     
     
     #write.csv(catchement_population_covariates, 'data/catchement_population_covariates.csv')
@@ -98,7 +107,7 @@ mw_008_load_pop_covars = function(scale='ARA') {
     
     # EMPLOYMENT DATA 
     
-    catch_emp_data = st_join(st_transform(emp_data_slim_sf, crs=st_crs(plz_catch_area)), intersections)
+    catch_emp_data = st_join(st_transform(emp_data_slim_sf, crs=catchment_crs), intersections)
     catch_emp_data_no_geom = st_drop_geometry(catch_emp_data )[,c('ara_id', 'B08VZAT')]
     catch_emp_data_dt = data.table(data.frame(catch_emp_data_no_geom))
     catch_emp_data_dt[, B08VZAT := nafill(catch_emp_data_dt$B08VZAT, fill=0)]
@@ -113,7 +122,13 @@ mw_008_load_pop_covars = function(scale='ARA') {
     
     #write.csv(catch_emp_data_dt_summed, 'data/catchement_employment_covariates.csv')
     
-    return(catch_pop_cov)
+    zmean = sapply(catch_pop_cov[, c('u20', 'o65', 'nec', 'pop_dens')], mean, na.rm=TRUE)
+    zstdv = sapply(catch_pop_cov[, c('u20', 'o65', 'nec', 'pop_dens')], sd, na.rm=TRUE)
+    catch_pop_cov_norm = copy(catch_pop_cov)
+    catch_pop_cov_norm[, c('u20', 'o65', 'nec', 'pop_dens')] = (drop_units(catch_pop_cov_norm[, c('u20', 'o65', 'nec', 'pop_dens')]) - t(matrix(zmean, nrow=4, ncol=length(catch_pop_cov_norm$ara_id))))/t(matrix(zstdv, nrow=4, ncol=length(catch_pop_cov_norm$ara_id)))
+    
+    
+    return(catch_pop_cov_norm)
     
   } else if(scale == 'PLZ') {
     
@@ -125,7 +140,7 @@ mw_008_load_pop_covars = function(scale='ARA') {
     plz_emp_data[, plz_emp_pop := sum(B08VZAT), by=c('PLZ')]
     
     
-    select_cols = c('B21BTOT', males, fmale, non_CH_EU, "E_KOORD", "N_KOORD")
+    select_cols = c('B21BTOT', males, fmale, nec, "E_KOORD", "N_KOORD")
     
     pop_data_age = pop_data[, ..select_cols]
     
@@ -145,24 +160,24 @@ mw_008_load_pop_covars = function(scale='ARA') {
     
     under_20_cols = grep("^B\\d{2}(BM|BW)(0[1-3])$", names(plz_pop_data_age_simp), value = TRUE)
     over_65_cols = grep("^B\\d{2}(BM|BW)(1[4-9]|2\\d|3[0-9])$", names(plz_pop_data_age_simp), value = TRUE)
-    plz_pop_data_age_simp[, prop_under_20 := rowSums(.SD) / B21BTOT, .SDcols = under_20_cols  ]
-    plz_pop_data_age_simp[, prop_over_65 := rowSums(.SD) / B21BTOT, .SDcols = over_65_cols  ]
+    plz_pop_data_age_simp[, u20 := rowSums(.SD) / B21BTOT, .SDcols = under_20_cols  ]
+    plz_pop_data_age_simp[, o65 := rowSums(.SD) / B21BTOT, .SDcols = over_65_cols  ]
     
     
-    plz_eth_cols = c('PLZ','B21BTOT', non_CH_EU)
+    plz_eth_cols = c('PLZ','B21BTOT', nec)
     
     plz_pop_data_birth = plz_pop_data_age[, ..plz_eth_cols]
     
-    plz_pop_data_birth_summed = plz_pop_data_birth[, lapply(.SD, sum, na.rm=TRUE), by=PLZ, .SDcols=c('B21BTOT', non_CH_EU)] 
+    plz_pop_data_birth_summed = plz_pop_data_birth[, lapply(.SD, sum, na.rm=TRUE), by=PLZ, .SDcols=c('B21BTOT', nec)] 
     
     plz_pop_data_birth = unique(plz_pop_data_birth_summed)
-    plz_pop_data_birth[, non_ch_eu := rowSums(.SD), .SDcols = non_CH_EU]
-    plz_pop_data_birth[, prop_non_ch_eu := non_ch_eu/B21BTOT]
-    plz_pop_data_birth$prop_non_ch_eu = nafill(plz_pop_data_birth$prop_non_ch_eu,fill=0)
+    plz_pop_data_birth[, no_nec := rowSums(.SD), .SDcols = nec]
+    plz_pop_data_birth[, nec := no_nec/B21BTOT]
+    plz_pop_data_birth$nec = nafill(plz_pop_data_birth$nec,fill=0)
     
-    plz_population_data = plz_pop_data_age_simp[, c('PLZ', 'B21BTOT', 'prop_under_20', 'prop_over_65')]
+    plz_population_data = plz_pop_data_age_simp[, c('PLZ', 'B21BTOT', 'u20', 'o65')]
     
-    plz_pop_cov = merge(merge(plz_population_data, unique(plz_emp_data[,c('PLZ', 'plz_emp_pop')]), on='PLZ'), plz_pop_data_birth[, c('PLZ', 'prop_non_ch_eu')])
+    plz_pop_cov = merge(merge(plz_population_data, unique(plz_emp_data[,c('PLZ', 'plz_emp_pop')]), on='PLZ'), plz_pop_data_birth[, c('PLZ', 'nec')])
     plz_area = rmapshaper::ms_dissolve(plz_area,'PLZ')
     plz_surarea = data.table( PLZ = plz_area$PLZ, 
                               area = st_area(plz_area))
@@ -173,7 +188,13 @@ mw_008_load_pop_covars = function(scale='ARA') {
     
     #write.csv(drop_na(plz_pop_cov[, -c('area')]), 'data/population_statistics_plz.csv')
     
-    return(plz_pop_cov)
+    zmean = sapply(plz_pop_cov[, c('u20', 'o65', 'nec', 'pop_dens')], mean, na.rm=TRUE)
+    zstdv = sapply(plz_pop_cov[, c('u20', 'o65', 'nec', 'pop_dens')], sd, na.rm=TRUE)
+    plz_pop_cov_norm = copy(plz_pop_cov)
+    plz_pop_cov_norm[, c('u20', 'o65', 'nec', 'pop_dens')] = (drop_units(plz_pop_cov_norm[, c('u20', 'o65', 'nec', 'pop_dens')]) - t(matrix(zmean, nrow=4, ncol=length(plz_pop_cov_norm$PLZ))))/t(matrix(zstdv, nrow=4, ncol=length(plz_pop_cov_norm$PLZ)))
+    
+    
+    return(plz_pop_cov_norm)
     
   } else {
     print('Please set scale to "ARA" or "PLZ"')
