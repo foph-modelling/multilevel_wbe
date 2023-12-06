@@ -1,6 +1,7 @@
 # Sensitive data
 /sens_data/*
 /savepoints/*
+*plz_catch_and_totals.rds
 
 # History files
 .Rhistory
