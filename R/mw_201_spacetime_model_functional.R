@@ -24,20 +24,18 @@
 
 #source("R/setup.R")
 
-pacman::p_load(data.table,
-               tidyverse,
-               #lubridate,
-               ISOweek,
-               INLA,
-               #inlabru,
-               sf,
-               splines,
-               cowplot,
-               #flextable,
-               spdep,
-               jsonlite,
-               scales, 
-               units)
+library(data.table)
+library(tidyverse)
+library(lubridate)
+library(ISOweek)
+library(INLA)
+library(sf)
+library(splines)
+library(cowplot)
+library(spdep)
+library(jsonlite)
+library(scales,)
+library(units)
 
 if( !dir.exists('outputs')){
   dir.create('outputs')
