@@ -26,6 +26,17 @@
 
 library(data.table)
 library(tidyverse)
+
+library(dplyr     )   
+library(readr)
+library(forcats   )
+library(stringr )
+library(ggplot2   )
+library(tibble  )
+library(lubridate )  
+library(tidyr)
+library(purrr)
+
 library(lubridate)
 library(ISOweek)
 library(INLA)
