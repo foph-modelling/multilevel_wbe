@@ -26,10 +26,10 @@
 
 pacman::p_load(data.table,
                tidyverse,
-               lubridate,
+               #lubridate,
                ISOweek,
                INLA,
-               inlabru,
+               #inlabru,
                sf,
                splines,
                cowplot,
