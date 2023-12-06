@@ -25,7 +25,6 @@
 #source("R/setup.R")
 
 library(data.table)
-library(tidyverse)
 
 library(dplyr     )   
 library(readr)
