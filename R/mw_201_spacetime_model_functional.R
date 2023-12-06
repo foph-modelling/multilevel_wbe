@@ -91,22 +91,16 @@ ww_all$day1 = ww_all$day
 
 
 # correspondence table
-corr_all = ww_all %>% 
-  group_by(ara_n,ara_id,ara_name,kt,pop,lab,lab_n,lab2,lab_n2,lab_method,lab_method_n,ara1,ara2,NUTS2_name) %>% 
-  count() %>% 
-  ungroup() 
-corr_all_ara = ww_all %>% 
-  group_by(ara1,ara_name,ara_id,kt,NUTS2_name) %>% 
-  count() %>% 
-  ungroup() 
+#corr_all = ww_all %>% 
+#  group_by(ara_n,ara_id,ara_name,kt,pop,lab,lab_n,lab2,lab_n2,lab_method,lab_method_n,ara1,ara2,NUTS2_name) %>% 
+#  count() %>% 
+#  ungroup() 
+#corr_all_ara = ww_all %>% 
+#  group_by(ara1,ara_name,ara_id,kt,NUTS2_name) %>% 
+#  count() %>% 
+#  ungroup() 
 #saveRDS(corr_all_ara,file=paste0("../",controls$savepoint,"corr_all_ara.rds"))
 
-if(!controls$rerun_models) {
-  mw_100_desc_table(ww_all) %>%
-    dplyr::mutate(across(everything(),as.character)) %>%
-    tidyr::gather() %>%
-    flextable::flextable(cwidth=c(4,4))
-}
 
 # Construct spatial model inputs
 
