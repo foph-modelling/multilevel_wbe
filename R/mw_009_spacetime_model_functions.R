@@ -12,7 +12,7 @@ fit_inla_model = function(wwdata,
                           fam='gamma',
                           logvl=FALSE, 
                           save.point = NULL,
-                          covariates = c('u20', 'o65', 'nec', 'pop_dens')
+                          covariates = c('u20', 'o65', 'nec', 'pop_dens', 'lab_method')
                           )
 {
   if(is.null(save.point)){
@@ -23,7 +23,7 @@ fit_inla_model = function(wwdata,
   
   wwdata = wwdata[order(day, ara_id),]
   # Merge catchment centroids to WW measurements
-  catchment_centroids_ww = merge(catchment_centroids, wwdata, by='ara_id', all=FALSE)
+  catchment_centroids_ww = catchment_centroids %>% arrange(day, ara_id)
 
   #generate data input for INLA model
   cnetroid_coords = st_coordinates(catchment_centroids_ww)
@@ -81,7 +81,7 @@ fit_inla_model = function(wwdata,
     tag = "est",
     data = list(y = d$vl_stand),
     A = list(1, A),
-    effects = list(data.frame(b0 = rep(1, nrow(d)), u20=d$u20, o65=d$o65, nec=d$nec, pop_dens=d$pop_dens, time.index=group), s = indexs)
+    effects = list(data.frame(b0 = rep(1, nrow(d)), u20=d$u20, o65=d$o65, nec=d$nec, pop_dens=d$pop_dens, time.index=group, lab_method = d$lab_method), s = indexs)
   )
   
   
@@ -109,7 +109,7 @@ fit_inla_model = function(wwdata,
   
   
   formula <- y ~ 0 + 
-                 b0 + u20 + o65 + nec  + pop_dens + 
+                 b0 + u20 + o65 + nec  + pop_dens + lab_method + 
                  f(time.index, model='rw1', hyper=rprior1) +
                  f(s, model = spde, group = s.group, control.group = list(model = "ar1", hyper = rprior3))
   # run the model 

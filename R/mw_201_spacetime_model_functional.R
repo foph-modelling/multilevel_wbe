@@ -21,8 +21,28 @@
 # scp UBELIX:/storage/homefs/jr18s506/projects/multilevel_wbe/savepoints/savepoint_2023-05-15/ma5.3.2.rds savepoints/savepoint_2023-05-15/. 
 # scp UBELIX:/storage/homefs/jr18s506/projects/multilevel_wbe/savepoints/savepoint_2023-05-15/ma5.3.3.rds savepoints/savepoint_2023-05-15/. 
 # scp UBELIX:/storage/homefs/jr18s506/projects/multilevel_wbe/savepoints/savepoint_2023-05-15/ma5.4.1.rds savepoints/savepoint_2023-05-15/. 
-if(!exists("controls")) controls = readRDS(fs::path("../savepoints/savepoint_2023-05-15/controls.rds"))
-source("R/setup.R")
+
+#source("R/setup.R")
+
+pacman::p_load(data.table,
+               tidyverse,
+               lubridate,
+               ISOweek,
+               INLA,
+               inlabru,
+               sf,
+               splines,
+               cowplot,
+               #flextable,
+               spdep,
+               jsonlite,
+               scales, 
+               units)
+
+if( !dir.exists('outputs')){
+  dir.create('outputs')
+}
+
 
 save.point = paste0('outputs/last_run_', Sys.time())
 dir.create(save.point)
@@ -51,7 +71,7 @@ ww_all = ww1 %>%
   # group lab and method
   dplyr::mutate(lab_method=paste0(lab2,"_",method),
                 lab_method_n=as.numeric(as.factor(lab_method)))
-saveRDS(ww_all,file=paste0("../",controls$savepoint,"ww_all.rds"))
+saveRDS(ww_all,file=paste0(save.point,"/ww_all.rds"))
 
 
 ww_all = ww_all %>% filter(date > lubridate::ymd(20220210) & date < lubridate::ymd(20220331))
