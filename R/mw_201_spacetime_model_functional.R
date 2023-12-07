@@ -47,6 +47,13 @@ library(jsonlite)
 library(scales,)
 library(units)
 
+
+
+source('R/mw_009_spacetime_model_functions.R')
+source('R/mw_011_evaluation_functions.R')
+
+message("sourced functions")
+
 if( !dir.exists('outputs')){
   dir.create('outputs')
 }
@@ -56,6 +63,9 @@ save.point = paste0('outputs/last_run_', Sys.time())
 dir.create(save.point)
 ww1 = readRDS(fs::path(controls$savepoint,"ww1.rds"))
 shapes = readRDS(fs::path(controls$savepoint,"shapes.rds"))
+
+
+message("Loaded data")
 
 #' 
 #' We now model all ARAs together. 
@@ -89,7 +99,7 @@ ww_all = ww_all %>% complete(ara_id, day)
 
 ww_all$day1 = ww_all$day
 
-
+message("Combined ww data and covariates")
 # correspondence table
 #corr_all = ww_all %>% 
 #  group_by(ara_n,ara_id,ara_name,kt,pop,lab,lab_n,lab2,lab_n2,lab_method,lab_method_n,ara1,ara2,NUTS2_name) %>% 
@@ -109,6 +119,9 @@ catchments = shapes$ara_shp
 catchments = st_transform(catchments, 25830)
 catchment_centroids = st_centroid(catchments)
 
+
+message("Loaded shape data")
+
 # merge ww data with centroids to ensure geometries map properly
 
 
@@ -124,6 +137,11 @@ catchment_centroids = merge(catchment_centroids, ww_all, by='ara_id', how='right
 centroid_coords = st_coordinates(catchment_centroids)
 colnames(centroid_coords) = c('X1', 'Y1')
 
+message("Prepared inputs")
+
+
+message("Running INLA model ... (expect a long pause)")
+
 # construct and run inla model in fit_inla_model() - in mw_009_spacetime_model_funtions.r
 inla_results = fit_inla_model(wwdata = ww_all, 
                               catchment_centroids = catchment_centroids, 
@@ -132,13 +150,15 @@ inla_results = fit_inla_model(wwdata = ww_all,
                               )
 
 
+message("Loading spatial data for projection")
+
 plz_pos = get_plz_centroids(crs_required = 25830)
 plz_coords = cbind(st_drop_geometry(plz_pos[,c('PLZ')]), st_coordinates(plz_pos) )
 
 plz_area = get_plz_areas(crs_required = 25830)
 
 plz_covariate_matrix = mw_008_load_pop_covars(scale = 'PLZ')
-
+message("Loaded spatial data for projection")
 
 time_steps = seq(1, length(unique(ww_all$day)))
 
@@ -149,7 +169,14 @@ for(time in time_steps){
   pcoords = rbind(pcoords, pcoords_date)
 }
 names(pcoords) <- c("PLZ", "x", "y", "time")
+
+message("Generated container for samples")
+message("Preparing projection covariates")
 pred_coords_covars = merge(unique(pcoords), unique(plz_covariate_matrix), by=c('PLZ'), how='left')
+message("Prepared projection covariates")
+
+
+message("Sampling the INLA model...")
 
 covariates = c('u20', 'o65', 'nec', 'pop_dens')
 get_samples_from_inla_model(inla_results = inla_results, 
@@ -158,6 +185,10 @@ get_samples_from_inla_model(inla_results = inla_results,
                             nsims = 500, 
                             model_dir = save.point)
 
+message(paste0("Sampling complete... outputs saved at ", save.point))
+
+message("Scoring samples...")
+
 scores = score_by_catch(nsims = 500,
                          savepath=save.point,
                          pred_coords_covars = pred_coords_covars, 
@@ -165,7 +196,9 @@ scores = score_by_catch(nsims = 500,
                          suffix='', 
                          log_vals=T, 
                          buffer=0)
+message("Scores generated")
 
+message("Plotting outputs and saving")
 
 scores$all_catch_res_long[, ':='(pred_mean=mean(prediction), upper=quantile(prediction, 0.95, na.rm=T), lower=quantile(prediction, 0.05, na.rm=T)), by=c('time', 'ara_id', 'model')]
 
