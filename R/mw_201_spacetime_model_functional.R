@@ -51,6 +51,8 @@ library(units)
 
 source('R/mw_009_spacetime_model_functions.R')
 source('R/mw_011_evaluation_functions.R')
+source('R/mw_008_load_pop_covars.R')
+
 
 message("sourced functions")
 
