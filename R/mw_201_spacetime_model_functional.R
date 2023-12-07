@@ -82,7 +82,7 @@ ww_all = ww1 %>%
 saveRDS(ww_all,file=paste0(save.point,"/ww_all.rds"))
 
 
-ww_all = ww_all %>% filter(date > lubridate::ymd(20220210) & date < lubridate::ymd(20220331))
+ww_all = ww_all %>% filter(date > lubridate::ymd(20220210) & date < lubridate::ymd(20220220))
 #ww_all = ww_all %>% filter(day1<20)
 
 ww_all = ww_all %>% complete(ara_id, day)
