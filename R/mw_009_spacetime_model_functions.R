@@ -132,7 +132,7 @@ fit_inla_model = function(wwdata,
                 A = inla.stack.A(stk.e)
               ),
               safe=TRUE,
-              num.threads = 8
+              num.threads = 3
   )
   
   
