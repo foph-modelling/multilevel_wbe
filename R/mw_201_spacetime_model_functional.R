@@ -228,7 +228,7 @@ catch_summary %>% ggplot() +
 #
 #scale_y_continuous(trans='log')
 
-
+ggsave('catchplot.png', height=10, width=15, units='in')
 
 dp_s = copy(ww_all)
 
@@ -245,4 +245,6 @@ ggplot(dp_s[below_lod==0 & below_loq==0, ]) +
   geom_ribbon(aes(x=day1, ymin=pred_lower, ymax=pred_upper), fill='red', alpha=0.2)+
   facet_wrap(~ara_id)+
   scale_y_continuous(trans='log')
+
+ggsave('ppp.png', height=10, width=15, units='in')
 
