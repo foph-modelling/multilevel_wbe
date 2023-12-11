@@ -117,7 +117,7 @@ fit_inla_model = function(wwdata,
   
   
   formula <- y ~ 0 + 
-                 b0 + u20 + o65 + nec  + pop_dens + lab_method + 
+                 b0 + u20 + o65 + nec  + pop_dens +  
                  f(time.index, model='rw1', hyper=rprior1) +
                  f(s, model = spde, group = s.group, control.group = list(model = "ar1", hyper = rprior3))
   # run the model 
@@ -231,7 +231,7 @@ get_samples_from_inla_model = function(inla_results, covariates, pred_coords_cov
   
   ntimes = length(time_steps)
   
-  coordinates = unique(pcoords[,c('x','y')])
+  coordinates = unique(pcoords[order(PLZ, time),c('x','y')])
 
   message('Sampling posterior...')
 
