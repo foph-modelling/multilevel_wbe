@@ -76,7 +76,7 @@ score_by_catch = function(nsims = 500,
     samp_vl_catchment_unique[, ara_id := as.character(ara_id)]
     true_values = samp_vl_catchment_unique[,c('ara_id', 'time')]
 
-    true_values = merge(true_values, ww_all[, c('ara_id', 'day', 'vl_stand')] %>% rename(time='day'), on=c('ara_id', 'time'))
+    true_values = merge(true_values, ww_all[, c('ara_id', 'day', 'vl_stand')] %>% mutate(time=day - min(ww_all$day)), on=c('ara_id', 'time'))
     
     
     #mask = which(true_values$name == n & !is.na(true_values$vl_mean7d_smooth))
