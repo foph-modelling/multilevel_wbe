@@ -117,7 +117,7 @@ fit_inla_model = function(wwdata,
   
   
   formula <- y ~ 0 + 
-                 b0 + u20 + o65 + nec  + pop_dens +  
+                 b0 + u20 + o65 + nec  + pop_dens + 
                  f(time.index, model='rw1', hyper=rprior1) +
                  f(s, model = spde, group = s.group, control.group = list(model = "ar1", hyper = rprior3))
   # run the model 
