@@ -26,11 +26,11 @@
 
 library(data.table)
 
-library(dplyr     )   
+library(dplyr   )   
 library(readr)
-library(forcats   )
+library(forcats )
 library(stringr )
-library(ggplot2   )
+library(ggplot2 )
 library(tibble  )
 library(lubridate )  
 library(tidyr)
@@ -209,11 +209,11 @@ catch_summary = unique(scores$all_catch_res_long[, c('time', 'ara_id', 'model', 
 catch_summary %>% ggplot() + 
   
   #geom_rect(aes(xmin = day-0.5, xmax = day+0.5, ymin=-Inf, ymax=Inf, fill=lab ), alpha=0.2)+
-  geom_point(aes(x=time, y=true_value), color='black', size=0.2) + 
-  geom_line(aes(x=time, y=pred_mean, color=model), alpha=0.7) +
-  geom_ribbon(aes(x=time, ymin=lower, ymax=upper, fill=model), alpha=0.2)+
+  geom_point(aes(x=time, y=log(true_value)), color='black', size=0.2) + 
+  geom_line(aes(x=time, y=log(pred_mean), color=model), alpha=0.7) +
+  geom_ribbon(aes(x=time, ymin=log(lower), ymax=log(upper), fill=model), alpha=0.2)+
   facet_wrap(~ara_id, ncol=10)+
-  coord_cartesian(ylim=c(0,20))+ 
+  coord_cartesian(ylim=c(-3,3))+ 
   ylab('Viral load per person') + 
   theme_minimal()#+
   #geom_rect(data = unique(subset(catch_summary %>% select(name, model),(name %in% select_wwtps)  & !(name %in% clust_pop[rankpop==1, ]$ara_id))),# &  model=='all_daily')), 
