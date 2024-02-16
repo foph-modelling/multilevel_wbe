@@ -6,7 +6,14 @@
 #:::::::::::::::::::::::::::::
 
 require(sf)
-require(tidyverse)
+library(dplyr     )   
+library(readr)
+library(forcats   )
+library(stringr )
+library(ggplot2   )
+library(tibble  )
+library(lubridate )  
+library(tidyr)
 require(data.table)
 require(units)
 
