@@ -203,7 +203,7 @@ specify_space_time_model <- function(fixed_effects = NULL, region_effect){
 }
 
 
-get_samples_from_inla_model = function(inla_results, covariates, pred_coords_covars, covariate_matrix, pred_times=NULL, nsims=500, model=NULL, model_dir='', suffix='', log_res=FALSE){
+get_samples_from_inla_model = function(inla_results, covariates, pred_coords_covars, covariate_matrix, pred_times=NULL, nsims=500, model=NULL, model_dir='', suffix='', log_res=FALSE, start=''){
   
   if(suffix != ''){
     suffix = paste0('_', suffix)
@@ -363,8 +363,8 @@ get_samples_from_inla_model = function(inla_results, covariates, pred_coords_cov
   
   message(paste0('\n \nsaving predictions at: ', model_dir,'/posterior_predictions_', as.character(nsims), '_', model, suffix, '.rds'))
   
-  saveRDS(object = sims.pred.t, file=paste0(model_dir,'/posterior_predictions_', as.character(nsims), '_', model, suffix, '.rds' ))
-  saveRDS(object = list(intercept, fixed.effects.in.order, fixed, eta, epsilon),file=paste0(model_dir,'/posterior_params_', as.character(nsims), '_', model, suffix, '.rds' ))
+  saveRDS(object = sims.pred.t, file=paste0(model_dir,'/', start, 'posterior_predictions_', as.character(nsims), '_', model, suffix, '.rds' ))
+  saveRDS(object = list(intercept, fixed.effects.in.order, fixed, eta, epsilon),file=paste0(model_dir,'/', start, 'posterior_params_', as.character(nsims), '_', model, suffix, '.rds' ))
   
   
   

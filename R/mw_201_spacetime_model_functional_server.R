@@ -185,7 +185,8 @@ get_samples_from_inla_model(inla_results = inla_results,
                             covariates = covariates, 
                             pred_coords_covars = pred_coords_covars, 
                             nsims = 500, 
-                            model_dir = save.point)
+                            model_dir = save.point, 
+                            start=start)
 
 message(paste0("Sampling complete... outputs saved at ", save.point))
 
@@ -228,7 +229,7 @@ catch_summary %>% ggplot() +
 #
 #scale_y_continuous(trans='log')
 
-ggsave('catchplot.png', height=10, width=15, units='in')
+ggsave(paste0('catchplot_', start, '.png'), height=10, width=15, units='in')
 
 dp_s = copy(ww_all)
 
@@ -246,5 +247,5 @@ ggplot(dp_s[below_lod==0 & below_loq==0, ]) +
   facet_wrap(~ara_id)+
   scale_y_continuous(trans='log')
 
-ggsave('ppp.png', height=10, width=15, units='in')
+ggsave(paste0('ppp_', start, '.png'), height=10, width=15, units='in')
 
