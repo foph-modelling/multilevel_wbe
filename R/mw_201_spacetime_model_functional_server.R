@@ -94,7 +94,7 @@ ww_all = ww1 %>%
 saveRDS(ww_all,file=paste0(save.point,"/ww_all.rds"))
 
 
-ww_all = ww_all %>% filter(date > start & date < start+14)
+ww_all = ww_all %>% filter(date > start & date < start+60)
 #ww_all = ww_all %>% filter(day1<20)
 
 ww_all = ww_all %>% complete(ara_id, day)
