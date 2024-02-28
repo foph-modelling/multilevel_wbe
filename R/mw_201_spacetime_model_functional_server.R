@@ -94,7 +94,7 @@ ww_all = ww1 %>%
 saveRDS(ww_all,file=paste0(save.point,"/ww_all.rds"))
 
 
-ww_all = ww_all %>% filter(date > start & date < start+60)
+ww_all = ww_all %>% filter(date > starts[i] & date < starts[i]+60)
 #ww_all = ww_all %>% filter(day1<20)
 
 ww_all = ww_all %>% complete(ara_id, day)
@@ -186,7 +186,7 @@ get_samples_from_inla_model(inla_results = inla_results,
                             pred_coords_covars = pred_coords_covars, 
                             nsims = 500, 
                             model_dir = save.point, 
-                            start=start)
+                            start=starts[i])
 
 message(paste0("Sampling complete... outputs saved at ", save.point))
 
@@ -229,7 +229,7 @@ catch_summary %>% ggplot() +
 #
 #scale_y_continuous(trans='log')
 
-ggsave(paste0('catchplot_', start, '.png'), height=10, width=15, units='in')
+ggsave(paste0('catchplot_', starts[i], '.png'), height=10, width=15, units='in')
 
 dp_s = copy(ww_all)
 
@@ -247,5 +247,5 @@ ggplot(dp_s[below_lod==0 & below_loq==0, ]) +
   facet_wrap(~ara_id)+
   scale_y_continuous(trans='log')
 
-ggsave(paste0('ppp_', start, '.png'), height=10, width=15, units='in')
+ggsave(paste0('ppp_', starts[i], '.png'), height=10, width=15, units='in')
 
