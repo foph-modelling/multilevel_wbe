@@ -194,6 +194,7 @@ message("Scoring samples...")
 
 scores = score_by_catch(nsims = 500,
                          savepath=save.point,
+                         start = starts[i],
                          pred_coords_covars = pred_coords_covars, 
                          models = c(''),
                          suffix='', 

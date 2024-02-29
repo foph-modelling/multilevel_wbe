@@ -5,6 +5,7 @@ library(data.table)
 
 score_by_catch = function(nsims = 500,
                           savepath,
+                          start='',
                           pred_coords_covars,
                           covariate_matrix,
                           models = c(''),
@@ -18,8 +19,8 @@ score_by_catch = function(nsims = 500,
   all_catch_res_long = data.table()
   for (model in models) {
     
-    res_path = paste0(savepath, '/posterior_predictions_', nsims, '_', model, suffix, '.rds')
-    inp_path = paste0(savepath, '/model_inputs.rds')
+    res_path = paste0(savepath, '/', start, 'posterior_predictions_', nsims, '_', model, suffix, '.rds')
+    inp_path = paste0(savepath, '/', start, 'model_inputs.rds')
     
     message(paste0('loading data from ', res_path))
     
