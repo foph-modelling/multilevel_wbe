@@ -20,6 +20,7 @@ fit_inla_model = function(wwdata,
                           fam='gamma',
                           logvl=FALSE, 
                           save.point = NULL,
+                          start = '',
                           covariates = c('u20', 'o65', 'nec', 'pop_dens', 'lab_method')
                           )
 {
@@ -149,7 +150,7 @@ fit_inla_model = function(wwdata,
     marginals = rbind(marginals, var_frame)
   }
   
-  saveRDS(list(marginals=marginals, A.indexs.spde=list(A=A,indices=indexs,spde=spde), stk=stk.e, pcoords=NULL), paste0(save.point, '/model_inputs.rds'))
+  saveRDS(list(marginals=marginals, A.indexs.spde=list(A=A,indices=indexs,spde=spde), stk=stk.e, pcoords=NULL), paste0(save.point, '/', start, 'model_inputs.rds'))
   
   
   return(list(marginals=marginals, res=res, A.indexs.spde=list(A=A,indices=indexs,spde=spde), stk=stk.e, pcoords=NULL))
@@ -273,9 +274,9 @@ get_samples_from_inla_model = function(inla_results, covariates, pred_coords_cov
   message('extracting spatio-temporal parameters ...')
   cont <- attr(samples, which = ".contents", exact = TRUE)
   id <- which(cont$tag=='s')  #  's' corresponds to the name associated with the space-time interaction in the fitted model: f(s, model = A.indexs.spde$spde ...
-  start <- cont$start[id]
-  end <- cont$length[id] + start - 1
-  ss <- lapply(samples,function(x){x$latent[start:end,1]})
+  begin <- cont$start[id]
+  end <- cont$length[id] + begin - 1
+  ss <- lapply(samples,function(x){x$latent[begin:end,1]})
   
   ss.array <- t(matrix(unlist(ss), ncol=nsims))
   
