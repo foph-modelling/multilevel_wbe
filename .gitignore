@@ -1,6 +1,8 @@
-# Sensitive data
+# Large data
 /sens_data/*
 /savepoints/*
+/data/population_statistics/*
+/data/employment_statistics/*
 
 # History files
 .Rhistory
