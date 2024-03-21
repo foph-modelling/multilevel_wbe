@@ -5,11 +5,13 @@
 # init date: 2023-04-17
 #:::::::::::::::::::::::::::::
 
-mw_004_merge_all = function(ww,ms,pd) {
+mw_004_merge_all = function(ww,ms,pd,se,co) {
   # merge all
   out = ww %>% 
     dplyr::left_join(ms, by = join_by(ara_id, date)) %>% 
     dplyr::left_join(pd, by="ara_id") %>% 
+    dplyr::left_join(se, by="ara_id") %>% 
+    dplyr::left_join(co, by="ara_id") %>% 
     dplyr::ungroup()
   
   # create vl with new population
