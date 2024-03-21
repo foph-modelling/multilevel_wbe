@@ -13,6 +13,9 @@ mw_009_load_sep = function(shp) {
   # find SEP by ARA
   jj = shp$ara_shp %>% 
     sf::st_contains(sep) 
+  
+  # global sd
+  glob_sd = sd(sep$ssep3)
 
   # find average SEP by ARA
   out = NULL
@@ -23,14 +26,15 @@ mw_009_load_sep = function(shp) {
       dplyr::summarise(ssep3_med=median(ssep3),
                        ssep3_mean=mean(ssep3),
                        ssep3_sd=sd(ssep3),
+                       ssep3_icc=ssep3_sd/glob_sd,
                        ssep3_min=min(ssep3),
                        ssep3_max=max(ssep3)) %>% 
       dplyr::mutate(ara_id=as.character(i)) %>% 
       dplyr::relocate(ara_id)
     out = dplyr::bind_rows(out,tmp)
   }
+  
+  
   return(out)
-  
-  
 }
   

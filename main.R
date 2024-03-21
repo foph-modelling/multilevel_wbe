@@ -38,8 +38,10 @@ if(controls$update_data) {
   shapes = mw_005_load_shp()
   # load SEP
   se0 = mw_009_load_sep(shp=shapes)
+  # load covars
+  co0 = mw_008_load_pop_covars()
   # merge and last prep
-  ww1 = mw_004_merge_all(ww0,ms0,pd0,se0)
+  ww1 = mw_004_merge_all(ww0,ms0,pd1,se0)
   # save
   saveRDS(ww1,file=fs::path(controls$savepoint,"ww1.rds"))
   saveRDS(shapes,file=fs::path(controls$savepoint,"shapes.rds"))
