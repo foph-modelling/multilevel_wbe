@@ -21,6 +21,21 @@ mw_008_load_pop_covars = function(scale='ARA') {
   catchments = st_make_valid(catchments)
   catchment_crs = st_crs(catchments)
   
+  plz_area = st_read('data/spatial/plz/PLZO_SHP_LV95/PLZO_PLZ.shp')
+  plz_area = st_transform(plz_area, crs = catchment_crs)
+  
+  plz_catch_area = data.table()
+  for (catch in catchments$ara_id){
+    suppressMessages({
+      plz_catch_area_part = data.table(st_filter(plz_area, catchments %>% filter(ara_id==catch), .predicate=st_intersects))
+    })
+    plz_catch_area_part[, ara_id:=catch]
+    plz_catch_area = rbind(plz_catch_area, plz_catch_area_part)
+  }
+  
+  plz_catch_area = st_as_sf(plz_catch_area, crs=st_crs(plz_area))
+  
+  
   ## load population data (Total population by hectare (2021) (100mx100m squares))
   swissboundaries_BFS_NATION = st_read('data/spatial/bfs/swissboundaries3d_2023-01_2056_5728.shp/swissBOUNDARIES3D_1_4_TLM_LANDESGEBIET.shp')
   bfs_crs = st_crs(swissboundaries_BFS_NATION)
