@@ -47,7 +47,7 @@ vignettes/*.pdf
 *population_statistics*
 
 # Large outputs
-*/outputs/*
+*outputs/*
 
 # mac system files
 *.DS_Store
