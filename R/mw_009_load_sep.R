@@ -21,7 +21,7 @@ mw_009_load_sep = function(shp) {
   joint_sf <- st_join(sep_sf, pop_sf, join = st_nearest_feature)
   
   joint_dt = data.table(st_drop_geometry(joint_sf))
-  head(joint_dt)
+  # head(joint_dt)
   joint_dt[, hect_id := paste0(E_KOORD, N_KOORD)]
   joint_dt[, sep_pop_weight := mean(B21BTOT)/.N, by=c('hect_id')]
   
@@ -51,8 +51,8 @@ mw_009_load_sep = function(shp) {
                        ssep3_icc=ssep3_sd/glob_sd,
                        ssep3_min=min(ssep3),
                        ssep3_max=max(ssep3)) %>% 
-      dplyr::mutate(ara_id=as.character(i)) %>% 
-      dplyr::relocate(ara_id)
+      dplyr::mutate(ara_n=as.character(i)) %>% 
+      dplyr::relocate(ara_n)
     out = dplyr::bind_rows(out,tmp)
   }
   

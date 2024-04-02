@@ -18,7 +18,7 @@
 # run setup
 source("setup.R")
 # load data
-ww1 = readRDS(fs::path("../",controls$savepoint,"ww1.rds"))
+ww2 = readRDS(fs::path("../",controls$savepoint,"ww1.rds"))
 shapes = readRDS(fs::path("../",controls$savepoint,"shapes.rds"))
 
 #' We use measurements of SARS-CoV-2 concentration in wastewater from multiple ARAs in Switzerland in 2022 and 2023. Viral concentration (*C*, unit: gene copies [gc] per liter) is transformed into viral load (*V*; unit: gc per day per 100,000) using the flow of wastewater on the same day (*F*) and the size of the population covered (*P*):

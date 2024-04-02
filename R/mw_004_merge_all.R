@@ -10,7 +10,8 @@ mw_004_merge_all = function(ww,ms,pd,se,co) {
   out = ww %>% 
     dplyr::left_join(ms, by = join_by(ara_id, date)) %>% 
     dplyr::left_join(pd, by="ara_id") %>% 
-    dplyr::left_join(se, by="ara_id") %>% 
+    dplyr::mutate(ara_n=as.character(ara_n)) %>% 
+    dplyr::left_join(se, by="ara_n") %>% 
     dplyr::left_join(co, by="ara_id") %>% 
     dplyr::ungroup()
   

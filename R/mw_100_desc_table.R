@@ -20,6 +20,13 @@ mw_100_desc_table = function(ww, ...) {
       `Last`=max(date,na.rm=TRUE),
       `Median viral concentration [gc/L]`=qsum_range(conc),
       `Median flow [m3/day]`=qsum_range(flow),
-      `Median viral load [gc/day/100,000]`=qsum_range(vl))
+      `Median viral load [gc/day/100,000]`=qsum_range(vl),
+      `Median population covered`=qsum_range(total_pop),
+      `Median proportion of population under 20`=qsum_range(prop_under_20),
+      `Median proportion of population over 65`=qsum_range(prop_over_65),
+      `Median proportion of population non-Swiss`=qsum_range(prop_over_65),
+      `Median SEP index`=qsum_range(ssep3_med),
+      `Median employment factor`=qsum_range(employment_factor)
+      )
   return(tab)
 }
