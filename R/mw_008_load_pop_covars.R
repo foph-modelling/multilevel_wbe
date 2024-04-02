@@ -64,7 +64,7 @@ mw_008_load_pop_covars = function(scale='ARA') {
   
   
   ## Load employment data (Total FTE employment by hectare (2020) (100mx100m squares))
-  emp_data = data.table::fread('data/employment_statistics/STATENT_2020.csv')
+  emp_data = data.table::fread('data/employment_statistics/STATENT_2020.csv',fill = TRUE)
   
   # Define columns of interest for covariates
   

@@ -132,7 +132,7 @@ ma5 = INLA::inla(vl ~ 1 +
                      hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
                    f(method,model="linear",mean.linear=0,prec.linear=.2) +
                    f(weekend,model="linear",mean.linear=0,prec.linear=.2) +
-                   f(hol,model="linear",mean.linear=0,prec.linear=.2),
+                   f(hol,model="linear",mean.linear=0,prec.linear=.2) ,
                  data = ww_one,
                  family = "gamma",
                  control.compute = list(waic=TRUE,config=TRUE),
@@ -170,7 +170,7 @@ if(controls$compute_cv) kfoldcv_vl(ww_one,ma6)
 ppp_vl(ww_one,ma6)
 
 
-  #' 
+#' 
 #' While the effect size is small, we observe an improvement in the fit. We also see the effect of method change, weekends and holidays.
 #' 
 #' We select this model as it gives the best compromise between accuracy (measured by RMSE), coverage and sharpness. We now apply this model to other ARAs.
@@ -304,3 +304,4 @@ ma5b = INLA::inla(vl ~ 1 +
 summary(ma5b)
 summary_exp_vl(ma5b,pars = "method|weekend|hol")
 ppp_vl(ww_one,ma5b)
+ju6558

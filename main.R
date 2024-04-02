@@ -8,7 +8,7 @@
 
 # Block 0: controls and set-up --------------------------------------------
 
-analysis_date = "2024-02-09"
+analysis_date = "2024-04-02"
 data_date = "2023-09-29" # name of the repertory with fixed data (up-to-date wastewater data is downloaded directly at every run)
 data_path = "../../02_data/wastewater/"
 period_dates = c("2022-05-16","2022-09-05","2023-01-02","2023-07-03") # set at the lowest points between waves, on Mondays so weeks are not cut
@@ -33,7 +33,7 @@ if(controls$update_data) {
   # load and prep population data by ARA
   pd0 = mw_003_load_plz_pop()
   pd1 = mw_007_load_hect_pop()
-  if(FALSE) left_join(pd0,pd1,by="ara_id") %>% ggplot(aes(x=pop_total.x,y=pop_total.y)) + geom_point()
+  if(FALSE) left_join(pd0,pd1,by="ara_id") %>% ggplot(aes(x=pop_total.x,y=pop_total.y)) + geom_point() + geom_abline(intercept=0,slope=1)
   # load shape files
   shapes = mw_005_load_shp()
   # load SEP
@@ -41,7 +41,7 @@ if(controls$update_data) {
   # load covars
   co0 = mw_008_load_pop_covars()
   # merge and last prep
-  ww1 = mw_004_merge_all(ww0,ms0,pd1,se0)
+  ww1 = mw_004_merge_all(ww0,ms0,pd1,se0,co0)
   # save
   saveRDS(ww1,file=fs::path(controls$savepoint,"ww1.rds"))
   saveRDS(shapes,file=fs::path(controls$savepoint,"shapes.rds"))

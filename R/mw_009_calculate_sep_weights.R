@@ -1,7 +1,5 @@
-library(tidyverse)
-library(data.table)
-library(sf)
 
+if(FALSE) {
 swissboundaries_BFS_NATION = st_read('data/spatial/bfs/swissboundaries3d_2023-01_2056_5728.shp/swissBOUNDARIES3D_1_4_TLM_LANDESGEBIET.shp')
 bfs_crs = st_crs(swissboundaries_BFS_NATION)
 pop_data = fread('data/population_statistics/STATPOP2021.csv')
@@ -23,3 +21,4 @@ joint_dt[, hect_id := paste0(E_KOORD, N_KOORD)]
 joint_dt[, sep_pop_weight := mean(B21BTOT)/.N, by=c('hect_id')]
 
 write.csv(joint_dt[, c('gisid', 'sep_pop_weight')], file = 'data/sep_weights.csv')
+}

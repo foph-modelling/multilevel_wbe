@@ -7,7 +7,8 @@
 
 
 # load libraries ----
-pacman::p_load(data.table,
+pacman::p_load(Hmisc,
+               data.table,
                tidyverse,
                lubridate,
                ISOweek,
