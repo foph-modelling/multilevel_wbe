@@ -5,15 +5,10 @@
 # init date: 2023-08-16
 #:::::::::::::::::::::::::::::
 
-require(sf)
-require(tidyverse)
-require(data.table)
-require(units)
-
-sf_use_s2(FALSE)
 
 mw_008_load_pop_covars = function(scale='ARA') {
   
+  sf_use_s2(FALSE)
   
   # load shape objects
   ## load catchment geometry

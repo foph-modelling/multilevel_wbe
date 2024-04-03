@@ -32,7 +32,7 @@ mw_111_map_vl = function(ww,shp) {
     geom_sf(data=shp$see_shp,fill="white") +
     geom_sf(data=tt,colour="black",aes(fill=vl)) +
     scale_fill_viridis_c(trans="log10") +
-    facet_wrap(~period,ncol=1) +
+    facet_wrap(~period,ncol=2) +
     labs(x=NULL,
          y=NULL,
          fill="Mean viral load") 
