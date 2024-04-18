@@ -23,6 +23,10 @@ pacman::p_load(Hmisc,
                scales, 
                units)
 
+# set language ----
+
+Sys.setenv(LANG = "en")
+
 # source functions ----
 fili = dir(path = "R",pattern="mw_[013456789]",full.names = TRUE)
 lapply(X = fili, FUN = function(x) {source(paste0(x), echo=FALSE)})
