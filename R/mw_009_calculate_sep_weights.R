@@ -4,11 +4,11 @@ pop_data = fread('data/population_statistics/STATPOP2021.csv')
 pop_data_slim = pop_data[,c('E_KOORD', 'N_KOORD',  'B21BTOT')]
 
 pop_sf = st_as_sf(pop_data_slim, coords = c("E_KOORD", "N_KOORD"), 
-                            crs = bfs_crs, remove=FALSE) %>% st_transform(crs = catchment_crs)
+                            crs = bfs_crs, remove=FALSE)
 
 
 sep_sf = readRDS("../../02_data/sep3/ssep3_user_geo.Rds") %>% 
-  sf::st_transform(crs=catchment_crs)
+  sf::st_transform(crs=bfs_crs)
 
 
 joint_sf <- st_join(sep_sf, pop_sf, join = st_nearest_feature)
