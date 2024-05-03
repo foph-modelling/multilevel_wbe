@@ -90,7 +90,7 @@ fit_inla_model = function(wwdata,
     tag = "est",
     data = list(y = d$vl_stand),
     A = list(1, A),
-    effects = list(data.frame(b0 = rep(1, nrow(d)), u20=d$u20, o65=d$o65, nec=d$nec, pop_dens=d$pop_dens, time.index=group, lab_method = d$lab_method), s = indexs)
+    effects = list(data.frame(b0 = rep(1, nrow(d)), u20=d$u20, o65=d$o65, nec=d$nec, pop_dens=d$pop_dens, time.index=group, lab_method = d$lab_method, log_pop_dens = d$log_pop_dens), s = indexs)
   )
   
   
@@ -118,7 +118,7 @@ fit_inla_model = function(wwdata,
   
   
   formula <- y ~ 0 + 
-                 b0 + u20 + o65 + nec  + pop_dens + 
+                 b0 + u20 + o65 + nec  + log_pop_dens + 
                  f(time.index, model='rw1', hyper=rprior1) +
                  f(s, model = spde, group = s.group, control.group = list(model = "ar1", hyper = rprior3))
   # run the model 

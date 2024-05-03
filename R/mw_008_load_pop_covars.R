@@ -103,10 +103,12 @@ mw_008_load_pop_covars = function(scale='ARA') {
       area = st_area(catchments))
     catch_pops_covs_summed = merge(catch_pops_covs_summed, catch_area, by=c('ara_id'))
     catch_pops_covs_summed[, pop_dens := drop_units(B21BTOT/area)]
+    catch_pops_covs_summed[, log_pop_dens := log(pop_dens)]
     
     
-    catchement_population_covariates = catch_pops_covs_summed[, c('ara_id', 'B21BTOT', 'u20', 'o65', 'nec', 'pop_dens')]
-    colnames(catchement_population_covariates) = c('ara_id', 'total_pop', 'u20', 'o65', 'nec', 'pop_dens')
+    
+    catchement_population_covariates = catch_pops_covs_summed[, c('ara_id', 'B21BTOT', 'u20', 'o65', 'nec', 'pop_dens', 'log_pop_dens')]
+    colnames(catchement_population_covariates) = c('ara_id', 'total_pop', 'u20', 'o65', 'nec', 'pop_dens', 'log_pop_dens')
     
     
     #write.csv(catchement_population_covariates, 'data/catchement_population_covariates.csv')
@@ -129,10 +131,10 @@ mw_008_load_pop_covars = function(scale='ARA') {
     
     #write.csv(catch_emp_data_dt_summed, 'data/catchement_employment_covariates.csv')
     
-    zmean = sapply(catch_pop_cov[, c('u20', 'o65', 'nec', 'pop_dens')], mean, na.rm=TRUE)
-    zstdv = sapply(catch_pop_cov[, c('u20', 'o65', 'nec', 'pop_dens')], sd, na.rm=TRUE)
+    zmean = sapply(catch_pop_cov[, c('u20', 'o65', 'nec', 'pop_dens', 'log_pop_dens')], mean, na.rm=TRUE)
+    zstdv = sapply(catch_pop_cov[, c('u20', 'o65', 'nec', 'pop_dens', 'log_pop_dens')], sd, na.rm=TRUE)
     catch_pop_cov_norm = copy(catch_pop_cov)
-    catch_pop_cov_norm[, c('u20', 'o65', 'nec', 'pop_dens')] = (drop_units(catch_pop_cov_norm[, c('u20', 'o65', 'nec', 'pop_dens')]) - t(matrix(zmean, nrow=4, ncol=length(catch_pop_cov_norm$ara_id))))/t(matrix(zstdv, nrow=4, ncol=length(catch_pop_cov_norm$ara_id)))
+    catch_pop_cov_norm[, c('u20', 'o65', 'nec', 'pop_dens', 'log_pop_dens')] = (drop_units(catch_pop_cov_norm[, c('u20', 'o65', 'nec', 'pop_dens', 'log_pop_dens')]) - t(matrix(zmean, nrow=5, ncol=length(catch_pop_cov_norm$ara_id))))/t(matrix(zstdv, nrow=5, ncol=length(catch_pop_cov_norm$ara_id)))
     
     
     return(catch_pop_cov_norm)
@@ -192,15 +194,15 @@ mw_008_load_pop_covars = function(scale='ARA') {
     
     plz_pop_cov = merge(plz_pop_cov, plz_surarea, by=c('PLZ'), how='left')
     plz_pop_cov[, pop_dens:=drop_units(B21BTOT/area)]
+    plz_pop_cov[, log_pop_dens := log(pop_dens + 1.e-23)]
     
     #write.csv(drop_na(plz_pop_cov[, -c('area')]), 'data/population_statistics_plz.csv')
     
-    zmean = sapply(plz_pop_cov[, c('u20', 'o65', 'nec', 'pop_dens')], mean, na.rm=TRUE)
-    zstdv = sapply(plz_pop_cov[, c('u20', 'o65', 'nec', 'pop_dens')], sd, na.rm=TRUE)
+    zmean = sapply(plz_pop_cov[, c('u20', 'o65', 'nec', 'pop_dens', 'log_pop_dens')], mean, na.rm=TRUE)
+    zstdv = sapply(plz_pop_cov[, c('u20', 'o65', 'nec', 'pop_dens', 'log_pop_dens')], sd, na.rm=TRUE)
     plz_pop_cov_norm = copy(plz_pop_cov)
-    plz_pop_cov_norm[, c('u20', 'o65', 'nec', 'pop_dens')] = (drop_units(plz_pop_cov_norm[, c('u20', 'o65', 'nec', 'pop_dens')]) - t(matrix(zmean, nrow=4, ncol=length(plz_pop_cov_norm$PLZ))))/t(matrix(zstdv, nrow=4, ncol=length(plz_pop_cov_norm$PLZ)))
-    
-    
+    plz_pop_cov_norm[, c('u20', 'o65', 'nec', 'pop_dens', 'log_pop_dens')] = (drop_units(plz_pop_cov_norm[, c('u20', 'o65', 'nec', 'pop_dens', 'log_pop_dens')]) - t(matrix(zmean, nrow=5, ncol=length(plz_pop_cov_norm$PLZ))))/t(matrix(zstdv, nrow=5, ncol=length(plz_pop_cov_norm$PLZ)))
+
     return(plz_pop_cov_norm)
     
   } else {

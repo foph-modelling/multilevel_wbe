@@ -61,6 +61,7 @@ if( !dir.exists('outputs')){
 }
 
 
+
 save.point = paste0('outputs/last_run_', Sys.time())
 dir.create(save.point)
 ww1 = readRDS(fs::path(controls$savepoint,"ww1.rds"))
@@ -94,7 +95,7 @@ ww_all = ww1 %>%
 saveRDS(ww_all,file=paste0(save.point,"/ww_all.rds"))
 
 
-ww_all = ww_all %>% filter(date > starts[i] & date < starts[i] + 60)
+ww_all = ww_all %>% filter(date > starts[i] & date < starts[i] + 45)
 #ww_all = ww_all %>% filter(day1<20)
 
 ww_all = ww_all %>% complete(ara_id, day)
@@ -130,6 +131,10 @@ message("Loaded shape data")
 # extract coordinates - non-sf object 
 
 
+ww_all[, u20 := prop_under_20]
+ww_all[, o65 := prop_over_65]
+ww_all[, nec := prop_non_ch_eu]
+
 # Make sure no VL vals are 0 or negative - scale down viral loads to support INLA tractability 
 ww_all = ww_all %>% mutate(vl_stand = if_else(vl<=0, 1e-23, vl/mean(na.exclude(ww_all$vl))))
 ww_all = data.table(ww_all)[order(day, ara_id), ]
@@ -149,7 +154,8 @@ inla_results = fit_inla_model(wwdata = ww_all,
                               catchment_centroids = catchment_centroids, 
                               plz_pos = plz_pos,
                               save.point = save.point,
-                              start = starts[i]
+                              start = starts[i], 
+                              covariates = c('u20', 'o65', 'nec', 'pop_dens', 'lab_method', 'log_pop_dens')
                               )
 
 
@@ -181,7 +187,7 @@ message("Prepared projection covariates")
 
 message("Sampling the INLA model...")
 
-covariates = c('u20', 'o65', 'nec', 'pop_dens')
+covariates = c('u20', 'o65', 'nec', 'log_pop_dens')
 get_samples_from_inla_model(inla_results = inla_results, 
                             covariates = covariates, 
                             pred_coords_covars = pred_coords_covars, 
@@ -208,15 +214,16 @@ message("Plotting outputs and saving")
 scores$all_catch_res_long[, ':='(pred_mean=mean(prediction), upper=quantile(prediction, 0.95, na.rm=T), lower=quantile(prediction, 0.05, na.rm=T)), by=c('time', 'ara_id', 'model')]
 
 catch_summary = unique(scores$all_catch_res_long[, c('time', 'ara_id', 'model', 'pred_mean', 'upper', 'lower', 'true_value')])
+catch_summary = merge(catch_summary,unique(ww_all[!is.na(ara_name), c('ara_id', 'ara_name')]))
 
 catch_summary %>% ggplot() + 
   
   #geom_rect(aes(xmin = day-0.5, xmax = day+0.5, ymin=-Inf, ymax=Inf, fill=lab ), alpha=0.2)+
-  geom_point(aes(x=time, y=log(true_value)), color='black', size=0.2) + 
-  geom_line(aes(x=time, y=log(pred_mean), color=model), alpha=0.7) +
-  geom_ribbon(aes(x=time, ymin=log(lower), ymax=log(upper), fill=model), alpha=0.2)+
-  facet_wrap(~ara_id, ncol=10)+
-  coord_cartesian(ylim=c(-3,3))+ 
+  geom_point(aes(x=time, y=true_value), color='black', size=0.2) + 
+  geom_line(aes(x=time, y=pred_mean, color=model), alpha=0.7) +
+  geom_ribbon(aes(x=time, ymin=lower, ymax=upper, fill=model), alpha=0.2)+
+  facet_wrap(~ara_name, ncol=10)+
+  #coord_cartesian(ylim=c(-3,3))+ 
   ylab('Viral load per person') + 
   theme_minimal()#+
   #geom_rect(data = unique(subset(catch_summary %>% select(name, model),(name %in% select_wwtps)  & !(name %in% clust_pop[rankpop==1, ]$ara_id))),# &  model=='all_daily')), 
@@ -241,13 +248,16 @@ dp_s$pred_lower = inla_results$res$summary.fitted.values[index_s, "0.025quant"]
 dp_s$pred_upper = inla_results$res$summary.fitted.values[index_s, "0.975quant"]
 
 
+dp_s = merge(dp_s,unique(ww_all[!is.na(ara_name), c('ara_id', 'ara_name')]))
+
 
 ggplot(dp_s[below_lod==0 & below_loq==0, ]) + 
   geom_point(aes(x=day1, y=vl_stand), size=0.3) + 
-  geom_line(aes(x=day1, y=pred_mean), color='red', linewidth=0.2, alpha=0.8)+
-  geom_ribbon(aes(x=day1, ymin=pred_lower, ymax=pred_upper), fill='red', alpha=0.2)+
-  facet_wrap(~ara_id)+
-  scale_y_continuous(trans='log')
+  geom_line(aes(x=day1, y=pred_mean), color='blue', linewidth=0.2, alpha=0.8)+
+  geom_ribbon(aes(x=day1, ymin=pred_lower, ymax=pred_upper), fill='blue', alpha=0.2)+
+  facet_wrap(~ara_name)+ 
+  theme_minimal()
+  #scale_y_continuous(trans='log')
 
 ggsave(paste0('ppp_', starts[i], '.png'), height=10, width=15, units='in')
 
