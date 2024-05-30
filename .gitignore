@@ -3,6 +3,7 @@
 /savepoints/*
 /data/population_statistics/*
 /data/employment_statistics/*
+/misc/*
 
 # History files
 .Rhistory

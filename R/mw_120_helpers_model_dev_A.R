@@ -172,12 +172,14 @@ summary_exp_vl = function(mod, pars, order=FALSE, ref=NULL, clean.out=NULL) {
     as_tibble() %>% 
     dplyr::filter(grepl(pars,Variable)) %>% 
     dplyr::transmute(Variable=Variable,
-                     VL_ratio=format(round(exp(mean),2),scientific=FALSE),
-                     lower_bound=format(round(exp(`0.025quant`),2),scientific=FALSE),
-                     upper_bound=format(round(exp(`0.975quant`),2),scientific=FALSE))
+                     VL_ratio=as.numeric(format(round(exp(mean),2),scientific=FALSE)),
+                     lower_bound=as.numeric(format(round(exp(`0.025quant`),2),scientific=FALSE)),
+                     upper_bound=as.numeric(format(round(exp(`0.975quant`),2),scientific=FALSE)))
   if(order) {
     o = o %>% 
-      dplyr::arrange(rev(VL_ratio))
+      dplyr::mutate(sort=as.numeric(VL_ratio)) %>% 
+      dplyr::arrange(-sort) %>% 
+      dplyr::select(-sort)
   }
   if(!is.null(ref)) {
     o = o %>% 
