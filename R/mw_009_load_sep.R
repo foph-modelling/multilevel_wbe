@@ -51,7 +51,8 @@ mw_009_load_sep = function(shp) {
                        ssep3_icc=ssep3_sd/glob_sd,
                        ssep3_min=min(ssep3),
                        ssep3_max=max(ssep3)) %>% 
-      dplyr::mutate(ara_n=as.character(i)) %>% 
+      dplyr::mutate(ara_n=as.character(i),
+                    ara_id=shp$ara_shp$ara_id[[i]]) %>% 
       dplyr::relocate(ara_n)
     out = dplyr::bind_rows(out,tmp)
   }

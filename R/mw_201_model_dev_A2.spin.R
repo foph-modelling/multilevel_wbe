@@ -38,7 +38,11 @@ ww_reg = ww1 %>%
   # create indexes for INLA
   dplyr::mutate(day1=day,
                 ara1=as.numeric(as.factor(ara_n)),
-                ara2=ara1)
+                ara2=ara1,
+                pop_totalb=pop_total/1000,
+                prop_under_20b=prop_under_20*100,
+                prop_over_65b=prop_over_65*100,
+                prop_non_ch_eub=prop_non_ch_eu*100)
 
 # correspondence table
 corr_reg = ww_reg %>% 
@@ -128,12 +132,12 @@ ma5.2$summary.random$ara1 %>%
   select(-ara1) %>% 
   column_to_rownames(var="ara_name")
 
-#'  Results are similar in terms of rankings. Of course the reference is now the between-ARA mean instead of one arbitrary ARA, which is more easily interpreted. As expected ARA-level intercepts are pulled towards the mean.
+#'  Results are similar in terms of rankings. Of course the reference is now the between-ARA mean instead of one arbitrary ARA (Aarwangen, the first in alphabetical order), which is more easily interpreted. As expected ARA-level intercepts are pulled towards the mean.
 #'  
 #'  
-#' ## Model A5.3: space-time interaction
-#' 
-#' We now allow different time trends across ARAs.
+#' ## Model A5.3: local covariates
+#'  
+#' We attempt to explain some of the spatial variability by local covariates: population covered, 
 #+ ma5.3, fig.width=8, fig.height=8,  R.options = list(width = 1000)
 if(controls$rerun_models) {
   ma5.3 = INLA::inla(vl ~ 1 +
@@ -143,10 +147,11 @@ if(controls$rerun_models) {
                          hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
                        f(weekend,model="linear",mean.linear=0,prec.linear=.2) +
                        f(hol,model="linear",mean.linear=0,prec.linear=.2) +
-                       f(ara1,model="iid") +
-                       f(day1,model="rw1", scale.model=TRUE, constr=TRUE,
-                         group=ara2, control.group=list(model="iid"),
-                         hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))),
+                       f(ara1,model="iid")  +
+                       f(prop_under_20b,model="linear",mean.linear=0,prec.linear=.2) +
+                       f(prop_over_65b,model="linear",mean.linear=0,prec.linear=.2) +
+                       f(prop_non_ch_eub,model="linear",mean.linear=0,prec.linear=.2) +
+                       f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2),
                      data = ww_reg,
                      family = "gamma",
                      control.compute = list(waic=TRUE,config=TRUE),
@@ -156,8 +161,8 @@ if(controls$rerun_models) {
   ma5.3 = readRDS(file=paste0("../",controls$savepoint,"ma5.3.rds"))
 }
 summary(ma5.3)
-summary_exp_vl(ma5.3,pars="lab|method|hol|weekend")
-ppp_vl_ara(ww_reg,ma5.3)
+summary_exp_vl(ma5.3,pars="lab|method|hol|weekend|pop_total|prop_under_20|prop_over_65|prop_non_ch_eu|ssep3_")
+ppp_vl_ara(ww_reg,ma5.3) 
 print("Relative viral load by ARA compared to average:")
 ma5.3$summary.random$ara1 %>% 
   as_tibble() %>% 
@@ -169,39 +174,16 @@ ma5.3$summary.random$ara1 %>%
   dplyr::arrange(-`exp(beta)`) %>% 
   select(-ara1) %>% 
   column_to_rownames(var="ara_name")
-ndays = length(unique(ww_reg$day))
-nara = length(unique(ww_reg$ara1))
-ma5.3$summary.random$day1 %>% 
-  bind_cols(day=rep(0:(ndays-1),nara),
-            ara1=rep(1:nara,each=ndays)) %>% 
-  left_join(corr_reg,by = join_by(ara1)) %>% 
-  ggplot() +
-  geom_hline(yintercept=1,linetype=2,alpha=.5) +
-  geom_ribbon(aes(x=day,ymin=exp(`0.025quant`),ymax=exp(`0.975quant`),fill=ara_name),alpha=.5) +
-  geom_line(aes(x=day,y=exp(mean),colour=ara_name)) +
-  facet_wrap(~ara_name) +
-  scale_colour_discrete(guide="none") +
-  scale_fill_discrete(guide="none") +
-  scale_y_continuous(trans="log",breaks = c(.1,1,10)) +
-  coord_cartesian(ylim=c(.05,20)) +
-  labs(title="Deviations from average time trend by ARA",x="Day",y="Relative viral load by ARA") 
 
-#' This brings a clear improvement in WAIC. We observe similar average between-ARA heterogeneity, with highest relative viral loads in Laupen, Lauterbrunnen, Grindelwald and Neuchâtel (four ARAs where the credible intervals are the highest) and lowest relative viral loads in Delemont, La-Chaux-de-Fonds, Emmental and Bern (four ARAs where the credible intervals are the lowest). While time trends are generally aligned, we observe deviations from the regional average time trend in some ARAs such as Colombier, Delemont and La-Chaux-de-Fonds (comparatively lower viral loads during Summer 2022), and in Lauterbrunnen, Grindelwald and Interlaken (comparatively higher during Summer 2022). 
+#' We find an overall relative increase in viral load of about 4% (2 to 6) for each unit 
+#' increase in the percentage of people aged 65 or older in the area, mirrored by a decrease of about 7% (1 to 12)
+#' for each unit increase in the percentage of people younger than 20. We don't find evidence towards an association
+#' between viral load and the proportion of foreigners or the average SEP index in the area.
 #'  
-#' ## Model A5.4: spatial structure
-#'  
-#' We now consider the neighboring structure between ARAs.
+#' ## Model A5.4: space-time interaction
 #' 
+#' We now allow different time trends across ARAs.
 #+ ma5.4, fig.width=8, fig.height=8,  R.options = list(width = 1000)
-# setup neighboring matrix
-shapes_reg = shapes$ara_shp %>% 
-  dplyr::filter(ara_id %in% ww_reg$ara_id) %>% 
-  left_join(corr_reg,by = join_by(ara_id)) %>% 
-  dplyr::arrange(ara1)
-sf_use_s2(FALSE)
-graph_reg = spdep::poly2nb(shapes_reg)
-path_graph = paste0("../",controls$savepoint,"W_reg_",select_NUTS2,".adj")
-nb2INLA(path_graph, graph_reg)
 if(controls$rerun_models) {
   ma5.4 = INLA::inla(vl ~ 1 +
                        f(below_loq,model="iid") +
@@ -210,15 +192,14 @@ if(controls$rerun_models) {
                          hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
                        f(weekend,model="linear",mean.linear=0,prec.linear=.2) +
                        f(hol,model="linear",mean.linear=0,prec.linear=.2) +
-                       f(ara1,model="bym2",
-                         graph=path_graph,
-                         scale.model = TRUE, constr = TRUE, 
-                         hyper = list(theta1 = list("PCprior", c(1, 0.01)),  # Pr(sd<1) = 0.01, unlikely to have rr>3 just based on the spatial confounding
-                                      theta2 = list("PCprior", c(0.5, 0.5)))  # Pr(phi<0.5)=0.5, we state that we believe that the unmeasured spatial confounding is driven 50% from the structured and 50% from the unstructured random effect
-                       ) +
+                       f(ara1,model="iid") +
                        f(day1,model="rw1", scale.model=TRUE, constr=TRUE,
                          group=ara2, control.group=list(model="iid"),
-                         hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))),
+                         hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01))))  +
+                       f(prop_under_20b,model="linear",mean.linear=0,prec.linear=.2) +
+                       f(prop_over_65b,model="linear",mean.linear=0,prec.linear=.2) +
+                       f(prop_non_ch_eub,model="linear",mean.linear=0,prec.linear=.2) +
+                       f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2),
                      data = ww_reg,
                      family = "gamma",
                      control.compute = list(waic=TRUE,config=TRUE),
@@ -228,8 +209,8 @@ if(controls$rerun_models) {
   ma5.4 = readRDS(file=paste0("../",controls$savepoint,"ma5.4.rds"))
 }
 summary(ma5.4)
-summary_exp_vl(ma5.4,pars="lab|method|hol|weekend")
-ppp_vl_ara(ww_reg,ma5.4) 
+summary_exp_vl(ma5.4,pars="lab|method|hol|weekend|pop_total|prop_under_20|prop_over_65|prop_non_ch_eu|ssep3_")
+ppp_vl_ara(ww_reg,ma5.4)
 print("Relative viral load by ARA compared to average:")
 ma5.4$summary.random$ara1 %>% 
   as_tibble() %>% 
@@ -239,8 +220,7 @@ ma5.4$summary.random$ara1 %>%
                    `0.975quant`=format(round(exp(`0.975quant`),2),scientific=FALSE)) %>% 
   dplyr::left_join(select(corr_reg,ara1,ara_name),by = join_by(ara1)) %>% 
   dplyr::arrange(-`exp(beta)`) %>% 
-  dplyr::select(-ara1) %>% 
-  dplyr::filter(!is.na(ara_name)) %>% 
+  select(-ara1) %>% 
   column_to_rownames(var="ara_name")
 ndays = length(unique(ww_reg$day))
 nara = length(unique(ww_reg$ara1))
@@ -258,6 +238,83 @@ ma5.4$summary.random$day1 %>%
   scale_y_continuous(trans="log",breaks = c(.1,1,10)) +
   coord_cartesian(ylim=c(.05,20)) +
   labs(title="Deviations from average time trend by ARA",x="Day",y="Relative viral load by ARA") 
+
+#' This brings a clear improvement in WAIC. We observe similar average between-ARA heterogeneity, with highest relative viral loads in Laupen, Lauterbrunnen, Grindelwald and Neuchâtel (four ARAs where the credible intervals are the highest) and lowest relative viral loads in Delemont, La-Chaux-de-Fonds, Emmental and Bern (four ARAs where the credible intervals are the lowest). While time trends are generally aligned, we observe deviations from the regional average time trend in some ARAs such as Colombier, Delemont and La-Chaux-de-Fonds (comparatively lower viral loads during Summer 2022), and in Lauterbrunnen, Grindelwald and Interlaken (comparatively higher during Summer 2022). 
 #'  
-#' Results are very similar to model A5.3. We find that the spatial structure explains between 0 and 70% of the spatial heterogeneity.
+#' ## Model A5.5: spatial structure
+#'  
+#' We now consider the neighboring structure between ARAs.
+#' 
+#+ ma5.5, fig.width=8, fig.height=8,  R.options = list(width = 1000)
+# setup neighboring matrix
+shapes_reg = shapes$ara_shp %>% 
+  dplyr::filter(ara_id %in% ww_reg$ara_id) %>% 
+  left_join(corr_reg,by = join_by(ara_id)) %>% 
+  dplyr::arrange(ara1)
+sf_use_s2(FALSE)
+graph_reg = spdep::poly2nb(shapes_reg)
+path_graph = paste0("../",controls$savepoint,"W_reg_",select_NUTS2,".adj")
+nb2INLA(path_graph, graph_reg)
+if(controls$rerun_models) {
+  ma5.5 = INLA::inla(vl ~ 1 +
+                       f(below_loq,model="iid") +
+                       f(below_lod,model="iid") +
+                       f(day,model="rw2", scale.model=TRUE, constr=TRUE,
+                         hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
+                       f(weekend,model="linear",mean.linear=0,prec.linear=.2) +
+                       f(hol,model="linear",mean.linear=0,prec.linear=.2) +
+                       f(ara1,model="bym2",
+                         graph=path_graph,
+                         scale.model = TRUE, constr = TRUE, 
+                         hyper = list(theta1 = list("PCprior", c(1, 0.01)),  # Pr(sd<1) = 0.01, unlikely to have rr>3 just based on the spatial confounding
+                                      theta2 = list("PCprior", c(0.5, 0.5)))  # Pr(phi<0.5)=0.5, we state that we believe that the unmeasured spatial confounding is driven 50% from the structured and 50% from the unstructured random effect
+                       ) +
+                       f(day1,model="rw1", scale.model=TRUE, constr=TRUE,
+                         group=ara2, control.group=list(model="iid"),
+                         hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
+                       f(prop_under_20b,model="linear",mean.linear=0,prec.linear=.2) +
+                       f(prop_over_65b,model="linear",mean.linear=0,prec.linear=.2) +
+                       f(prop_non_ch_eub,model="linear",mean.linear=0,prec.linear=.2) +
+                       f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2),
+                     data = ww_reg,
+                     family = "gamma",
+                     control.compute = list(waic=TRUE,config=TRUE),
+                     control.predictor = list(compute=TRUE,link=1))
+  saveRDS(ma5.5,file=paste0("../",controls$savepoint,"ma5.5.rds"))
+} else {
+  ma5.5 = readRDS(file=paste0("../",controls$savepoint,"ma5.5.rds"))
+}
+summary(ma5.5)
+summary_exp_vl(ma5.5,pars="lab|method|hol|weekend|pop_total|prop_under_20|prop_over_65|prop_non_ch_eu|ssep3_")
+ppp_vl_ara(ww_reg,ma5.5) 
+print("Relative viral load by ARA compared to average:")
+ma5.5$summary.random$ara1 %>% 
+  as_tibble() %>% 
+  dplyr::transmute(ara1=ID,
+                   `exp(beta)`=round(exp(mean),2),
+                   `0.025quant`=round(exp(`0.025quant`),2),
+                   `0.975quant`=format(round(exp(`0.975quant`),2),scientific=FALSE)) %>% 
+  dplyr::left_join(select(corr_reg,ara1,ara_name),by = join_by(ara1)) %>% 
+  dplyr::arrange(-`exp(beta)`) %>% 
+  dplyr::select(-ara1) %>% 
+  dplyr::filter(!is.na(ara_name)) %>% 
+  column_to_rownames(var="ara_name")
+ndays = length(unique(ww_reg$day))
+nara = length(unique(ww_reg$ara1))
+ma5.5$summary.random$day1 %>% 
+  bind_cols(day=rep(0:(ndays-1),nara),
+            ara1=rep(1:nara,each=ndays)) %>% 
+  left_join(corr_reg,by = join_by(ara1)) %>% 
+  ggplot() +
+  geom_hline(yintercept=1,linetype=2,alpha=.5) +
+  geom_ribbon(aes(x=day,ymin=exp(`0.025quant`),ymax=exp(`0.975quant`),fill=ara_name),alpha=.5) +
+  geom_line(aes(x=day,y=exp(mean),colour=ara_name)) +
+  facet_wrap(~ara_name) +
+  scale_colour_discrete(guide="none") +
+  scale_fill_discrete(guide="none") +
+  scale_y_continuous(trans="log",breaks = c(.1,1,10)) +
+  coord_cartesian(ylim=c(.05,20)) +
+  labs(title="Deviations from average time trend by ARA",x="Day",y="Relative viral load by ARA") 
+#'  
+#' Results are very similar to model A5.4. We find that the spatial structure explains between 0 and 70% of the spatial heterogeneity.
 #' 

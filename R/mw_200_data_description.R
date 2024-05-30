@@ -44,7 +44,7 @@ mw_100_desc_table(ww1) %>%
   dplyr::mutate(across(everything(),as.character)) %>% 
   tidyr::gather() %>% 
   dplyr::rename(Variable=key,Value=value) %>% 
-  flextable::flextable(cwidth=c(4,4)) 
+  flextable::flextable(cwidth=c(4,10)) 
 #' **Table 1.** Summary of available data.
 
 #+ desc_tab_nuts2
@@ -71,11 +71,11 @@ mw_106_fig_vl_time(ww1)
 
 #+ fig_vl, fig.width=8, fig.height=10
 mw_104_fig_vl(ww1)
-#' **Figure 5.** Weekly mean SARS-CoV-2 viral load in wastewater by ARA (removing values below the LOD or LOQ). Dashed lines show the delimitation in four periods.
+#' **Figure 5.** Weekly median SARS-CoV-2 viral load in wastewater by ARA (removing values below the LOD or LOQ). Dashed lines show the delimitation in four periods.
 
 #+ map_vl, fig.width=8, fig.height=14
 mw_111_map_vl(ww1,shapes)
-#' **Figure 6.** Mean SARS-CoV-2 viral load in wastewater by ARA by period.
+#' **Figure 6.** Median SARS-CoV-2 viral load in wastewater by ARA by period.
 
 
 
