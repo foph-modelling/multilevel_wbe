@@ -105,7 +105,7 @@ mw_008_load_pop_covars = function(scale='ARA') {
     
     #write.csv(catchement_population_covariates, 'data/catchement_population_covariates.csv')
     
-    if(FALSE) { # for now remove employment
+    # if(FALSE) { # for now remove employment
     # EMPLOYMENT DATA 
     
     catch_emp_data = st_join(st_transform(emp_data_slim_sf, crs=st_crs(plz_catch_area)), intersections)
@@ -122,9 +122,9 @@ mw_008_load_pop_covars = function(scale='ARA') {
     catch_pop_cov = left_join(catchement_population_covariates, catch_emp_data_dt_summed, by = 'ara_id')
     
     
-    }
+    # }
     
-    catch_pop_cov = catchement_population_covariates
+    # catch_pop_cov = catchement_population_covariates
     #write.csv(catch_emp_data_dt_summed, 'data/catchement_employment_covariates.csv')
     
     return(catch_pop_cov)

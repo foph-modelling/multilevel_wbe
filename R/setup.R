@@ -28,7 +28,7 @@ pacman::p_load(Hmisc,
 Sys.setenv(LANG = "en")
 
 # source functions ----
-fili = dir(path = "R",pattern="mw_[013456789]",full.names = TRUE)
+fili = dir(path = "R",pattern="mw_[01456789]",full.names = TRUE)
 lapply(X = fili, FUN = function(x) {source(paste0(x), echo=FALSE)})
 
 # create savepoint repertory if not existing ----

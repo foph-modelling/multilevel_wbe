@@ -21,8 +21,9 @@ mw_110_map_missing = function(ww,shp,identify_eawag=FALSE) {
     geom_sf(data=shp$canton_shp,fill="grey95",colour="grey70") +
     geom_sf(data=shp$see_shp,fill="white") +
     geom_sf(data=tt,colour="black",aes(fill=n)) +
-    scale_fill_viridis_c() +
-    labs(fill="Measurements")
+    scale_fill_viridis_c(breaks=c(100,300,500,700)) +
+    labs(fill="Measurements")   +
+    theme(legend.position="bottom")
 
   return(g)
 }

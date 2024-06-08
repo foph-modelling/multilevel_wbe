@@ -21,8 +21,8 @@ mw_004_merge_all = function(ww,ms,pd,se,co) {
     dplyr::mutate(vl=(conc*flow*1e3)/(pop_total/1e5)) 
   
   # create employment_per_population
-  # out = out %>% 
-    # dplyr::mutate(employment_factor=catch_emp_pop/pop_total)
+  out = out %>%
+    dplyr::mutate(employment_factor=catch_emp_pop/pop_total)
 
   if(FALSE) {
     out %>% 

@@ -90,7 +90,8 @@ if(controls$rerun_models) {
                          f(prop_under_20b,model="linear",mean.linear=0,prec.linear=.2) +
                          f(prop_over_65b,model="linear",mean.linear=0,prec.linear=.2) +
                          f(prop_non_ch_eub,model="linear",mean.linear=0,prec.linear=.2) +
-                         f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2),
+                         f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2)  +
+                         f(employment_factor,model="linear",mean.linear=0,prec.linear=.2),
                        data = ww_all,
                        family = "gamma",
                        control.compute = list(waic=TRUE,config=TRUE),
@@ -134,7 +135,8 @@ if(controls$rerun_models) {
                          f(prop_under_20b,model="linear",mean.linear=0,prec.linear=.2) +
                          f(prop_over_65b,model="linear",mean.linear=0,prec.linear=.2) +
                          f(prop_non_ch_eub,model="linear",mean.linear=0,prec.linear=.2) +
-                         f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2),
+                         f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2)  +
+                         f(employment_factor,model="linear",mean.linear=0,prec.linear=.2),
                        data = ww_all,
                        family = "gamma",
                        control.compute = list(waic=TRUE,config=TRUE),
@@ -177,7 +179,8 @@ if(controls$rerun_models) {
                          f(prop_under_20b,model="linear",mean.linear=0,prec.linear=.2) +
                          f(prop_over_65b,model="linear",mean.linear=0,prec.linear=.2) +
                          f(prop_non_ch_eub,model="linear",mean.linear=0,prec.linear=.2) +
-                         f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2),
+                         f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2)  +
+                         f(employment_factor,model="linear",mean.linear=0,prec.linear=.2),
                        data = ww_all,
                        family = "gamma",
                        control.compute = list(waic=TRUE,config=TRUE),
@@ -197,6 +200,63 @@ mw_130_map_relative_vl(ma5.4.3,corr_all_ara,shapes)
 #+ ma5.4.3d, fig.width=8, fig.height=6,  R.options = list(width = 1000)
 mw_131_map_deviation_from_average(ma5.4.3,corr_all_ara,ww_all,shapes,12)
 
+#' 
+#' ## Model A5.4.4: spatial structure
+#' 
+#' Instead of just one temporal trend for Switzerland, we now allow independent temporal trends for each NUTS-2 region. ARAs- within each region are then allowed to deviate from the regional trend independently.
+#' 
+#+ ma5.4.4a, fig.width=8, fig.height=12,  R.options = list(width = 1000)
+if(controls$rerun_models) {
+    shapes_all = shapes$ara_shp %>%
+      dplyr::filter(ara_id %in% ww_all$ara_id) %>%
+      left_join(corr_all_ara,by = join_by(ara_id)) %>%
+      dplyr::arrange(ara1)
+    sf_use_s2(FALSE)
+    graph_all = spdep::poly2nb(shapes_all)
+    path_graph = paste0("../",controls$savepoint,"W_all.adj")
+    nb2INLA(path_graph, graph_all)
+  ma5.4.4 = INLA::inla(vl ~ 1 +
+                         f(below_loq,model="iid") +
+                         f(below_lod,model="iid") +
+                         f(day,model="rw2", scale.model=TRUE, constr=TRUE,
+                           group=NUTS2, control.group=list(model="iid"),
+                           hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
+                         f(weekend,model="linear",mean.linear=0,prec.linear=.2) +
+                         f(hol,model="linear",mean.linear=0,prec.linear=.2) +
+                         f(ara1,model="bym2",
+                           graph=path_graph,
+                           scale.model = TRUE, constr = TRUE,
+                           hyper = list(theta1 = list("PCprior", c(1, 0.01)),
+                                        theta2 = list("PCprior", c(0.5, 0.5)))) +
+                         f(day1,model="rw1", scale.model=TRUE, constr=TRUE,
+                           group=ara2, control.group=list(model="iid"),
+                           hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01))))  +
+                         f(lab_method,model="linear",mean.linear=0,prec.linear=.2) +
+                         f(prop_under_20b,model="linear",mean.linear=0,prec.linear=.2) +
+                         f(prop_over_65b,model="linear",mean.linear=0,prec.linear=.2) +
+                         f(prop_non_ch_eub,model="linear",mean.linear=0,prec.linear=.2) +
+                         f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2)  +
+                         f(employment_factor,model="linear",mean.linear=0,prec.linear=.2),
+                       data = ww_all,
+                       family = "gamma",
+                       control.compute = list(waic=TRUE,config=TRUE),
+                       control.predictor = list(compute=TRUE,link=1),
+                       num.threads="4:1")
+  saveRDS(ma5.4.4,file=paste0("../",controls$savepoint,"ma5.4.4.rds"))
+} else {
+  ma5.4.4 = readRDS(file=paste0("../",controls$savepoint,"ma5.4.4.rds"))
+}
+summary(ma5.4.4)
+summary_exp_vl(ma5.4.4,pars="lab|method|hol|weekend|pop_total|prop_under_20|prop_over_65|prop_non_ch_eu|ssep3_")
+ppp_vl_ara(ww_all,ma5.4.4)
+#+ ma5.4.4b, fig.width=8, fig.height=4,  R.options = list(width = 1000)
+avg_time_trend_reg(ww_all,ma5.4.4)
+#+ ma5.4.4c, fig.width=8, fig.height=6,  R.options = list(width = 1000)
+mw_130_map_relative_vl(ma5.4.4,corr_all_ara,shapes)
+#+ ma5.4.4d, fig.width=8, fig.height=6,  R.options = list(width = 1000)
+mw_131_map_deviation_from_average(ma5.4.4,corr_all_ara,ww_all,shapes,12)
+
+
 
 
 #' 
@@ -215,22 +275,22 @@ mw_131_map_deviation_from_average(ma5.4.3,corr_all_ara,ww_all,shapes,12)
 #'   path_graph = paste0("../",controls$savepoint,"W_all.adj")
 #'   nb2INLA(path_graph, graph_all)
 #'   ma5.4.1 = INLA::inla(vl ~ 1 +
-#'                          f(below_loq,model="iid") +
-#'                          f(below_lod,model="iid") +
-#'                          f(day,model="rw2", scale.model=TRUE, constr=TRUE,
-#'                            group=NUTS2, control.group=list(model="iid"),
-#'                            hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
-#'                          f(weekend,model="linear",mean.linear=0,prec.linear=.2) +
-#'                          f(hol,model="linear",mean.linear=0,prec.linear=.2) +
-#'                          f(ara1,model="bym2",
-#'                            graph=path_graph,
-#'                            scale.model = TRUE, constr = TRUE, 
-#'                            hyper = list(theta1 = list("PCprior", c(1, 0.01)), 
-#'                                         theta2 = list("PCprior", c(0.5, 0.5)))) +
-#'                          f(day1,model="rw1", scale.model=TRUE, constr=TRUE,
-#'                            group=ara2, control.group=list(model="iid"),
-#'                            hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
-#'                          lab_method,
+                         # f(below_loq,model="iid") +
+                         # f(below_lod,model="iid") +
+                         # f(day,model="rw2", scale.model=TRUE, constr=TRUE,
+                         #   group=NUTS2, control.group=list(model="iid"),
+                         #   hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
+                         # f(weekend,model="linear",mean.linear=0,prec.linear=.2) +
+                         # f(hol,model="linear",mean.linear=0,prec.linear=.2) +
+                         # f(ara1,model="bym2",
+                         #   graph=path_graph,
+                         #   scale.model = TRUE, constr = TRUE,
+                         #   hyper = list(theta1 = list("PCprior", c(1, 0.01)),
+                         #                theta2 = list("PCprior", c(0.5, 0.5)))) +
+                         # f(day1,model="rw1", scale.model=TRUE, constr=TRUE,
+                         #   group=ara2, control.group=list(model="iid"),
+                         #   hyper=list(prec = list(prior = "pc.prec", param = c(1, 0.01)))) +
+                         # lab_method,
 #'                        data = ww_all,
 #'                        family = "gamma",
 #'                        control.compute = list(waic=TRUE,config=TRUE),
