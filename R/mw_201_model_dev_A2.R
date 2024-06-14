@@ -152,7 +152,7 @@ if(controls$rerun_models) {
                        f(prop_over_65b,model="linear",mean.linear=0,prec.linear=.2) +
                        f(prop_non_ch_eub,model="linear",mean.linear=0,prec.linear=.2) +
                        f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2) +
-                       f(emplyment_factor,model="linear",mean.linear=0,prec.linear=.2),
+                       f(employment_factor,model="linear",mean.linear=0,prec.linear=.2),
                      data = ww_reg,
                      family = "gamma",
                      control.compute = list(waic=TRUE,config=TRUE),
@@ -200,7 +200,8 @@ if(controls$rerun_models) {
                        f(prop_under_20b,model="linear",mean.linear=0,prec.linear=.2) +
                        f(prop_over_65b,model="linear",mean.linear=0,prec.linear=.2) +
                        f(prop_non_ch_eub,model="linear",mean.linear=0,prec.linear=.2) +
-                       f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2),
+                       f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2) +
+                       f(employment_factor,model="linear",mean.linear=0,prec.linear=.2),
                      data = ww_reg,
                      family = "gamma",
                      control.compute = list(waic=TRUE,config=TRUE),
@@ -276,7 +277,8 @@ if(controls$rerun_models) {
                        f(prop_under_20b,model="linear",mean.linear=0,prec.linear=.2) +
                        f(prop_over_65b,model="linear",mean.linear=0,prec.linear=.2) +
                        f(prop_non_ch_eub,model="linear",mean.linear=0,prec.linear=.2) +
-                       f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2),
+                       f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2) +
+                       f(employment_factor,model="linear",mean.linear=0,prec.linear=.2),
                      data = ww_reg,
                      family = "gamma",
                      control.compute = list(waic=TRUE,config=TRUE),
