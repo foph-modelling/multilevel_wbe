@@ -130,7 +130,7 @@ project_to_cantons = function(savepath, pcoords, start, catchments, models=c('')
     geom_ribbon(aes(x=time, ymin=lower, ymax=upper, fill=model), alpha=0.2)+
     #geom_line(aes(x=time, y=exp(pred_mean), color=model), alpha=0.7) +
     #geom_ribbon(aes(x=time, ymin=exp(lower), ymax=exp(upper), fill=model), alpha=0.2)+
-    geom_point(data=hosps_ct[day %in% cant_summary$time], aes(x=day, y=mean7d*2e5/pop), color='black', size=0.3)+
+    geom_point(data=hosps_ct[day %in% cant_summary$time], aes(x=day, y=mean7d*1e6/pop), color='black', size=0.3)+
     facet_wrap(~NAME, ncol=7)+
     ylab('Viral load per person')+
     coord_cartesian(ylim=c(0,10))+ 
