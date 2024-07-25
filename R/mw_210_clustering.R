@@ -1,10 +1,12 @@
 library(patchwork)
+library(tidyverse)
+library(data.table)
 
 model = readRDS(paste0("../",controls$savepoint,"ma5.3.2.rds"))
 
-ww = readRDS(ww_all,file=paste0("../",controls$savepoint,"ww_all.rds"))
+ww = readRDS(file=paste0("../",controls$savepoint,"ww_all.rds"))
 
-corr= readRDS(corr_all_ara,file=paste0("../",controls$savepoint,"corr_all_ara.rds"))
+corr= readRDS(file=paste0("../",controls$savepoint,"corr_all_ara.rds"))
 
 #:::::::::::::::::::::::::::::
 # Project: multilevel_wbe
@@ -44,7 +46,7 @@ g1 = tt %>% filter(date<lubridate::ymd(20230101) )%>%
   scale_fill_discrete(guide="none") +
   scale_y_continuous(trans="log",breaks = c(.1,1,10)) +
   coord_cartesian(ylim=c(.05,20)) +
-  labs(title=paste0("Top deviations from average time trend (top ",ntop,")"),x="Day",y="Relative viral load by ARA") + 
+  #labs(title=paste0("Top deviations from average time trend (top ",ntop,")"),x="Day",y="Relative viral load by ARA") + 
   theme(axis.text.x = element_text(angle=45,hjust=1))
 
 
