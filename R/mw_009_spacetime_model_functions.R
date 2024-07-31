@@ -21,7 +21,7 @@ fit_inla_model = function(wwdata,
                           logvl=FALSE, 
                           save.point = NULL,
                           start = '',
-                          covariates = c('u20', 'o65', 'nec', 'pop_dens', 'lab_method')
+                          covariates = c('u20', 'o65', 'nec', 'pop_dens', 'log_pop_dens', 'lab_method')
                           )
 {
   if(is.null(save.point)){
