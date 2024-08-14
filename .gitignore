@@ -1,7 +1,10 @@
-# Sensitive data
+# Large data
 /sens_data/*
 /savepoints/*
 *plz_catch_and_totals.rds
+/data/population_statistics/*
+/data/employment_statistics/*
+/misc/*
 
 # History files
 .Rhistory

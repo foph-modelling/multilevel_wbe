@@ -7,14 +7,12 @@
 
 mw_131_map_deviation_from_average = function(model,corr,ww,shp,ntop=NULL) {
   
-  # model = ma5.3.1
+  # model = ma5.3.3
   # corr = corr_all_ara
   # shp = shapes
   # ww = ww_all
-  
+  # 
   # extract ARA trends
-  alldays = 0:(max(ww$day)-1)
-  ndays = length(alldays)
   nara = length(unique(ww$ara1))
   corr_periods = ww %>% 
     dplyr::select(date,period) %>% 
@@ -22,8 +20,12 @@ mw_131_map_deviation_from_average = function(model,corr,ww,shp,ntop=NULL) {
   corr_days = tibble(day=0:max(ww$day),
          date=seq.Date(from=min(ww$date),to=max(ww$date),by=1)) %>% 
     left_join(corr_periods,by = join_by(date))
-  tt = model$summary.random$day1 %>% 
-    dplyr::bind_cols(day=rep(alldays,nara),
+  tt = model$summary.random$day1
+  alldays = unique(tt$ID)
+  ndays = length(alldays)
+  
+  tt = tt %>%  
+      dplyr::bind_cols(day=rep(alldays,nara),
                      ara1=rep(1:nara,each=ndays)) %>% 
     dplyr::left_join(corr,by = join_by(ara1)) %>% 
     dplyr::left_join(corr_days,by="day") %>% 

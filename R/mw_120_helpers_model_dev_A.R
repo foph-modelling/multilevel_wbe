@@ -93,13 +93,14 @@ avg_time_trend_reg = function(dat,mod) {
   lims = dat %>% 
     dplyr::filter(below_lod==0,below_loq==0) %>% 
     dplyr::summarise(minvl=min(vl),maxvl=max(vl))
-  alldays = 0:(max(dat$day)-1)
+  alldays = unique(dat$day)
+  alldays = alldays[order(alldays)]
   ndays = length(alldays)
   corr_periods = dat %>% 
     dplyr::select(date,period) %>% 
     dplyr::distinct()
-  corr_days = tibble(day=alldays,
-                     date=seq.Date(from=min(dat$date),to=max(dat$date)-1,by=1)) %>% 
+  corr_days = tibble(date=seq.Date(from=min(dat$date),to=max(dat$date)-1,by=1)) %>% 
+    mutate(day=row_number()-1) %>% 
     left_join(corr_periods,by = join_by(date))
   allnuts2 = dat %>% 
     dplyr::select(NUTS2,NUTS2_name) %>% 
@@ -171,12 +172,14 @@ summary_exp_vl = function(mod, pars, order=FALSE, ref=NULL, clean.out=NULL) {
     as_tibble() %>% 
     dplyr::filter(grepl(pars,Variable)) %>% 
     dplyr::transmute(Variable=Variable,
-                     VL_ratio=format(round(exp(mean),2),scientific=FALSE),
-                     lower_bound=format(round(exp(`0.025quant`),2),scientific=FALSE),
-                     upper_bound=format(round(exp(`0.975quant`),2),scientific=FALSE))
+                     VL_ratio=as.numeric(format(round(exp(mean),2),scientific=FALSE)),
+                     lower_bound=as.numeric(format(round(exp(`0.025quant`),2),scientific=FALSE)),
+                     upper_bound=as.numeric(format(round(exp(`0.975quant`),2),scientific=FALSE)))
   if(order) {
     o = o %>% 
-      dplyr::arrange(-VL_ratio)
+      dplyr::mutate(sort=as.numeric(VL_ratio)) %>% 
+      dplyr::arrange(-sort) %>% 
+      dplyr::select(-sort)
   }
   if(!is.null(ref)) {
     o = o %>% 
@@ -200,7 +203,7 @@ plot_exp_vl = function(mod, pars, order=FALSE, ref=NULL, clean.out=NULL) {
                      upper_bound=format(round(exp(`0.975quant`),2),scientific=FALSE))
   if(order) {
     o = o %>% 
-      dplyr::arrange(-VL_ratio)
+      dplyr::arrange(rev(VL_ratio))
   }
   if(!is.null(ref)) {
     o = o %>% 

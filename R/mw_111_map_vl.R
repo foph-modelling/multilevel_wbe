@@ -22,17 +22,20 @@ mw_111_map_vl = function(ww,shp) {
   # range
   vl_range = ww %>% 
     dplyr::group_by(ara_id,period,week) %>% 
-    dplyr::summarise(vl=mean(vl,na.rm=TRUE),.groups="drop") %>% 
+    dplyr::summarise(vl=median(vl,na.rm=TRUE),.groups="drop") %>% 
     dplyr::filter(!is.na(vl)) %>% 
     dplyr::summarise(min=min(vl,na.rm=TRUE),max=max(vl,na.rm=TRUE))
-
+  
   # plot map
   g = ggplot() +
     geom_sf(data=shp$canton_shp,fill="grey95",colour="grey70") +
     geom_sf(data=shp$see_shp,fill="white") +
     geom_sf(data=tt,colour="black",aes(fill=vl)) +
-    scale_fill_viridis_c(trans="log10") +
-    facet_wrap(~period)
+    scale_fill_viridis_c(trans="log10",labels = function(x) format(x, scientific = TRUE)) +
+    facet_wrap(~period,ncol=2) +
+    labs(x=NULL,
+         y=NULL,
+         fill="Median viral load") 
   
   return(g)
 }

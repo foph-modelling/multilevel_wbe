@@ -4,7 +4,6 @@
 # creation: jmunday
 # init date: 2023-08-16
 #:::::::::::::::::::::::::::::
-
 require(sf)
 library(dplyr     )   
 library(readr)
@@ -19,8 +18,10 @@ require(units)
 
 sf_use_s2(FALSE)
 
+
 mw_008_load_pop_covars = function(scale='ARA') {
   
+  sf_use_s2(FALSE)
   
   # load shape objects
   ## load catchment geometry
@@ -29,6 +30,7 @@ mw_008_load_pop_covars = function(scale='ARA') {
   catchment_crs = st_crs(catchments)
   
 
+
   plz_area = st_read('data/spatial/plz/PLZO_SHP_LV95/PLZO_PLZ.shp')
   # set to required crs
 
@@ -36,6 +38,22 @@ mw_008_load_pop_covars = function(scale='ARA') {
   
   #merge split polygons
   plz_area = rmapshaper::ms_dissolve(plz_area,'PLZ')
+
+  plz_area = st_read('data/spatial/plz/PLZO_SHP_LV95/PLZO_PLZ.shp')
+  plz_area = st_transform(plz_area, crs = catchment_crs)
+  
+  plz_catch_area = data.table()
+  for (catch in catchments$ara_id){
+    suppressMessages({
+      plz_catch_area_part = data.table(st_filter(plz_area, catchments %>% filter(ara_id==catch), .predicate=st_intersects))
+    })
+    plz_catch_area_part[, ara_id:=catch]
+    plz_catch_area = rbind(plz_catch_area, plz_catch_area_part)
+  }
+  
+  plz_catch_area = st_as_sf(plz_catch_area, crs=st_crs(plz_area))
+  
+
   
   ## load population data (Total population by hectare (2021) (100mx100m squares))
   swissboundaries_BFS_NATION = st_read('data/spatial/bfs/swissboundaries3d_2023-01_2056_5728.shp/swissBOUNDARIES3D_1_4_TLM_LANDESGEBIET.shp')
@@ -65,7 +83,7 @@ mw_008_load_pop_covars = function(scale='ARA') {
   
   
   ## Load employment data (Total FTE employment by hectare (2020) (100mx100m squares))
-  emp_data = data.table::fread('data/employment_statistics/STATENT_2020.csv')
+  emp_data = data.table::fread('data/employment_statistics/STATENT_2020.csv',fill = TRUE)
   
   # Define columns of interest for covariates
   
@@ -111,7 +129,7 @@ mw_008_load_pop_covars = function(scale='ARA') {
     
     #write.csv(catchement_population_covariates, 'data/catchement_population_covariates.csv')
     
-    
+    if(FALSE) { # for now remove employment
     # EMPLOYMENT DATA 
     
     catch_emp_data = st_join(st_transform(emp_data_slim_sf, crs=catchment_crs), intersections)
@@ -125,8 +143,12 @@ mw_008_load_pop_covars = function(scale='ARA') {
     
     ### Combine 
     
-    catch_pop_cov = merge(catchement_population_covariates, catch_emp_data_dt_summed, by = 'ara_id')
+    catch_pop_cov = left_join(catchement_population_covariates, catch_emp_data_dt_summed, by = 'ara_id')
     
+    
+    }
+    
+    catch_pop_cov = catchement_population_covariates
     #write.csv(catch_emp_data_dt_summed, 'data/catchement_employment_covariates.csv')
     
     zmean = sapply(catch_pop_cov[, c('u20', 'o65', 'nec', 'pop_dens')], mean, na.rm=TRUE)

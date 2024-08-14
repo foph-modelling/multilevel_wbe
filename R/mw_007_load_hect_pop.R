@@ -29,7 +29,7 @@ mw_007_load_hect_pop = function() {
   pop_data_slim_sf = st_as_sf(pop_data_slim, coords = c("E_KOORD", "N_KOORD"), 
                               crs = bfs_crs, remove=FALSE) %>% st_transform(crs = catchment_crs)
   
-  emp_data = data.table::fread('data/employment_statistics/STATENT_2020.csv')
+  emp_data = data.table::fread('data/employment_statistics/STATENT_2020.csv',fill=TRUE)
   emp_data_slim = emp_data[,c('N_KOORD', 'E_KOORD', 'B08VZAT')]
   emp_data_slim_sf = st_as_sf(emp_data_slim, coords = c("E_KOORD", "N_KOORD"), 
                               crs = bfs_crs, remove=FALSE)
