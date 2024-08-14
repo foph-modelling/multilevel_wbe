@@ -8,7 +8,7 @@
 
 # Block 0: controls and set-up --------------------------------------------
 
-analysis_date = "2024-05-30"
+analysis_date = "2023-05-15"
 data_date = "2023-09-29" # name of the repertory with fixed data (up-to-date wastewater data is downloaded directly at every run)
 data_path = "../../02_data/wastewater/"
 period_dates = c("2022-05-16","2022-09-05","2023-01-02","2023-07-03") # set at the lowest points between waves, on Mondays so weeks are not cut
@@ -71,4 +71,8 @@ rmarkdown::render("R/mw_201_model_dev_A2.R",
 rmarkdown::render("R/mw_201_model_dev_A3.R",
                   params=list(controls=controls),
                   output_file=file.path("../",controls$savepoint,"model_dev_A3.html"),clean=FALSE)
+
+
+
+  
 
