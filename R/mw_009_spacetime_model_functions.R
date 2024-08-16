@@ -204,7 +204,7 @@ specify_space_time_model <- function(fixed_effects = NULL, region_effect){
 }
 
 
-get_samples_from_inla_model = function(inla_results, covariates, pred_coords_covars, covariate_matrix, pred_times=NULL, nsims=500, model=NULL, model_dir='', suffix='', log_res=FALSE, start=''){
+get_samples_from_inla_model = function(inla_results, covariates, pred_coords_covars, covariate_matrix, pred_times=NULL, nsims=500, model=NULL, model_dir='', suffix='', log_res=FALSE, start='', fam='gamma'){
   
   if(suffix != ''){
     suffix = paste0('_', suffix)
@@ -256,8 +256,11 @@ get_samples_from_inla_model = function(inla_results, covariates, pred_coords_cov
     return(out)
   }
   
-  
-  sigma.residual <- sqrt(1/extract.joint.hyperpar(samples,'Precision parameter for the Gamma observations'))
+  if (fam == 'gamma'){
+    sigma.residual <- sqrt(1/extract.joint.hyperpar(samples,'Precision parameter for the Gamma observations'))
+  } else if(fam == 'gaussian'){
+  sigma.residual <- extract.joint.hyperpar(samples,'Precision for the Gaussian observations')
+  }
   rho <- extract.joint.hyperpar(samples,'GroupRho for s')
   
 

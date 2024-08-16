@@ -449,13 +449,13 @@ features = features %>%
   )
 
 
-high_deg = features %>% arrange(-degree) %>% head(10)
+high_deg = features %>% arrange(-degree) %>% head(12)
 
-high_bet = features %>% arrange(-betweenness) %>% head(10)
+high_bet = features %>% arrange(-betweenness) %>% head(12)
 
-high_cen = features %>% arrange(-e_centrality) %>% head(10)
+high_cen = features %>% arrange(-e_centrality) %>% head(12)
 
-high_pra = features %>% arrange(-prank) %>% head(10)
+high_pra = features %>% arrange(-prank) %>% head(12)
 
 
 
@@ -641,3 +641,94 @@ features_coms[top_deg == T,]
 features_coms[top_bet == T,]
 features_coms[top_cen == T,]
 features_coms[top_pag == T,]
+
+catchments_clusters = catchments %>% merge(features_coms, by=c('ara_id'))
+
+catchments_graph = catchments %>% merge(features, by=c('ara_id'))
+
+
+
+deg_clust_map = 
+  ggplot() + 
+  geom_sf(data=shapes$canton_shp, fill=NA, color='gray')+
+  geom_sf(data=catchments_clusters %>% filter(top_deg==T), aes(fill=as.character(mobil_cluster)), color=NA) +
+  ggtitle('Degree cluster') + 
+  scale_y_continuous(breaks = c()) + 
+  theme(
+    legend.position = 'right', 
+    legend.title = element_text('Mobility communities')
+  )
+
+bet_clust_map = 
+  ggplot() + 
+  geom_sf(data=shapes$canton_shp, fill=NA, color='gray')+
+  geom_sf(data=catchments_clusters %>% filter(top_bet==T), aes(fill=as.character(mobil_cluster))) +
+  ggtitle('Betweeness cluster') + 
+  theme(
+    legend.position = 'none'
+  )
+
+cen_clust_map = 
+  ggplot() + 
+  geom_sf(data=shapes$canton_shp, fill=NA, color='gray')+
+  geom_sf(data=catchments_clusters %>% filter(top_cen==T), aes(fill=as.character(mobil_cluster))) +
+  ggtitle('Centrality cluster') + 
+  theme(
+    legend.position = 'none'
+  )
+
+pag_clust_map = 
+  ggplot() + 
+  geom_sf(data=shapes$canton_shp, fill=NA, color='gray')+
+  geom_sf(data=catchments_clusters %>% filter(top_pag==T), aes(fill=as.character(mobil_cluster))) +
+  ggtitle('Page rank cluster') + 
+  theme(
+    legend.position = 'none'
+  )
+
+deg_graph_map = 
+  ggplot() + 
+  geom_sf(data=shapes$canton_shp, fill=NA, color='gray')+
+  geom_sf(data=catchments_graph %>% filter(top_deg==T), aes(fill=as.character(mobil_cluster))) +
+  ggtitle('Degree graph') + 
+  theme(
+   legend.position = 'none'
+  )
+
+bet_graph_map = 
+  ggplot() + 
+  geom_sf(data=shapes$canton_shp, fill=NA, color='gray')+
+  geom_sf(data=catchments_graph %>% filter(top_bet==T), aes(fill=as.character(mobil_cluster))) +
+  ggtitle('Betweeness graph') + 
+  theme(
+    legend.position = 'none'
+  )
+
+cen_graph_map = 
+  ggplot() + 
+  geom_sf(data=shapes$canton_shp, fill=NA, color='gray')+
+  geom_sf(data=catchments_graph %>% filter(top_cen==T), aes(fill=as.character(mobil_cluster))) +
+  ggtitle('Centrality graph') + 
+  theme(
+    legend.position = 'none'
+  )
+
+pag_graph_map = 
+  ggplot() + 
+  geom_sf(data=shapes$canton_shp, fill=NA, color='gray')+
+  geom_sf(data=catchments_graph %>% filter(top_pra==T), aes(fill=as.character(mobil_cluster))) +
+  ggtitle('Page rank graph') + 
+  theme(
+    legend.position = 'none'
+  )
+
+layout = 
+"
+ABCD
+EFGH"
+
+deg_graph_map +  bet_graph_map +  cen_graph_map +  pag_graph_map + 
+  deg_clust_map + bet_clust_map + cen_clust_map + pag_clust_map + 
+  plot_layout(design = layout, guides = "collect") 
+
+

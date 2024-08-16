@@ -96,7 +96,7 @@ saveRDS(ww_all,file=paste0(save.point,"/ww_all.rds"))
 
 
 #ww_all = ww_all %>% filter(date > starts[i] & date < starts[i] + 60)
-ww_all = ww_all %>% filter(day1>40, day1<100)
+ww_all = ww_all %>% filter(day1>250, day1<350)
 
 ww_all = ww_all %>% complete(ara_id, day)
 
@@ -135,8 +135,15 @@ message("Loaded shape data")
 ww_all = ww_all %>% mutate(vl_stand = if_else(vl<=0, 1e-23, vl/mean(na.exclude(ww_all$vl))))
 ww_all = data.table(ww_all)[order(day, ara_id), ]
 ww_all[, log_pop_dens := log(pop_dens)]
+
+features = fread('outputs/ara_selections_mobility.csv')
+
+ara_ids = features[top_bet == T,]$ara_id
+
+ww_tofit = ww_all %>% filter(ara_id %in% ara_ids)
+
 # construct list of coordinates to match the viral load data time series data 
-catchment_centroids = merge(catchment_centroids, ww_all, by='ara_id', how='right')
+catchment_centroids = merge(catchment_centroids, ww_tofit, by='ara_id', how='right')
 centroid_coords = st_coordinates(catchment_centroids)
 colnames(centroid_coords) = c('X1', 'Y1')
 
@@ -145,14 +152,18 @@ colnames(centroid_coords) = c('X1', 'Y1')
 message("Prepared inputs")
 
 
+
+
+
 message("Running INLA model ... (expect a long pause)")
 
 # construct and run inla model in fit_inla_model() - in mw_009_spacetime_model_funtions.r
-inla_results = fit_inla_model(wwdata = ww_all, 
-                              catchment_centroids = catchment_centroids, 
+inla_results = fit_inla_model(wwdata = data.table(ww_tofit), 
+                              catchment_centroids = catchment_centroids,
+                              fam = 'gaussian',
                               plz_pos = plz_pos,
                               save.point = save.point,
-                              start = starts[i]
+                              start = min(ww_tofit$date)
                               )
 
 
@@ -189,37 +200,38 @@ get_samples_from_inla_model(inla_results = inla_results,
                             covariates = covariates, 
                             pred_coords_covars = pred_coords_covars, 
                             nsims = 500, 
-                            model_dir = save.point, 
-                            start=starts[i])
+                            model_dir = save.point,
+                            fam='gaussian',
+                            start=min(ww_tofit$date))
 
 message(paste0("Sampling complete... outputs saved at ", save.point))
 
 message("Scoring samples...")
 
-scores = score_by_catch(nsims = 500,
+scores_graph = score_by_catch(nsims = 500,
                          savepath=save.point,
-                         start = starts[i],
+                         start = min(ww_tofit$date),
                          pred_coords_covars = pred_coords_covars, 
                          models = c(''),
                          suffix='', 
-                         log_vals=T, 
+                         log_vals=F, 
                          buffer=0)
 message("Scores generated")
 
 message("Plotting outputs and saving")
 
-scores$all_catch_res_long[, ':='(pred_mean=mean(prediction), upper=quantile(prediction, 0.95, na.rm=T), lower=quantile(prediction, 0.05, na.rm=T)), by=c('time', 'ara_id', 'model')]
+scores_graph$all_catch_res_long[, ':='(pred_mean=mean(prediction), upper=quantile(prediction, 0.95, na.rm=T), lower=quantile(prediction, 0.05, na.rm=T)), by=c('time', 'ara_id', 'model')]
 
-catch_summary = unique(scores$all_catch_res_long[, c('time', 'ara_id', 'model', 'pred_mean', 'upper', 'lower', 'true_value')])
+catch_summary = unique(scores_graph$all_catch_res_long[, c('time', 'ara_id', 'model', 'pred_mean', 'upper', 'lower', 'true_value')])
 
 catch_summary %>% ggplot() + 
   
   #geom_rect(aes(xmin = day-0.5, xmax = day+0.5, ymin=-Inf, ymax=Inf, fill=lab ), alpha=0.2)+
-  geom_point(aes(x=time, y=log(true_value)), color='black', size=0.2) + 
-  geom_line(aes(x=time, y=log(pred_mean), color=model), alpha=0.7) +
-  geom_ribbon(aes(x=time, ymin=log(lower), ymax=log(upper), fill=model), alpha=0.2)+
+  geom_point(aes(x=time, y=true_value), color='black', size=0.2) + 
+  geom_line(aes(x=time, y=pred_mean, color=model), alpha=0.7) +
+  geom_ribbon(aes(x=time, ymin=lower, ymax=upper, fill=model), alpha=0.2)+
   facet_wrap(~ara_id, ncol=10)+
-  coord_cartesian(ylim=c(-3,3))+ 
+  coord_cartesian(ylim=c(0,7.5))+ 
   ylab('Viral load per person') + 
   theme_minimal()#+
   #geom_rect(data = unique(subset(catch_summary %>% select(name, model),(name %in% select_wwtps)  & !(name %in% clust_pop[rankpop==1, ]$ara_id))),# &  model=='all_daily')), 
@@ -236,20 +248,22 @@ catch_summary %>% ggplot() +
 
 ggsave(paste0('catchplot_', starts[i], '.png'), height=10, width=15, units='in')
 
-dp_s = copy(ww_all)
+dp_s = copy(ww_tofit)
 
 index_s <- inla.stack.index(stack = inla_results$stk, tag = "est")$data
-dp_s$pred_mean = inla_results$res$summary.fitted.values[index_s, "mean"]
-dp_s$pred_lower = inla_results$res$summary.fitted.values[index_s, "0.025quant"]
-dp_s$pred_upper = inla_results$res$summary.fitted.values[index_s, "0.975quant"]
+dp_s$pred_mean = exp(inla_results$res$summary.fitted.values[index_s, "mean"])
+dp_s$pred_lower = exp(inla_results$res$summary.fitted.values[index_s, "0.025quant"])
+dp_s$pred_upper = exp(inla_results$res$summary.fitted.values[index_s, "0.975quant"])
+
+
 
 
 
 ggplot(dp_s[below_lod==0 & below_loq==0, ]) + 
-  geom_point(aes(x=day1, y=vl_stand), size=0.3) + 
-  geom_line(aes(x=day1, y=pred_mean), color='red', linewidth=0.2, alpha=0.8)+
-  geom_ribbon(aes(x=day1, ymin=pred_lower, ymax=pred_upper), fill='red', alpha=0.2)+
-  facet_wrap(~ara_id)+
+  geom_point(aes(x=date, y=vl_stand), size=0.3) + 
+  geom_line(aes(x=date, y=log(pred_mean)), color='red', linewidth=0.2, alpha=0.8)+
+  geom_ribbon(aes(x=date, ymin=log(pred_lower), ymax=log(pred_upper)), fill='red', alpha=0.2)+
+  facet_wrap(~ara_id)#+
   scale_y_continuous(trans='log')
 
 ggsave(paste0('ppp_', starts[i], '.png'), height=10, width=15, units='in')
