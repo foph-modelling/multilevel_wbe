@@ -22,9 +22,39 @@
 # scp UBELIX:/storage/homefs/jr18s506/projects/multilevel_wbe/savepoints/savepoint_2023-05-15/ma5.3.3.rds savepoints/savepoint_2023-05-15/. 
 # scp UBELIX:/storage/homefs/jr18s506/projects/multilevel_wbe/savepoints/savepoint_2023-05-15/ma5.4.1.rds savepoints/savepoint_2023-05-15/. 
 
-source("R/setup.R")
+#source("R/setup.R")
+
+library(data.table)
+
+library(dplyr   )   
+library(readr)
+library(forcats )
+library(stringr )
+library(ggplot2 )
+library(tibble  )
+library(lubridate )  
+library(tidyr)
+library(purrr)
+
+library(lubridate)
+library(ISOweek)
+library(INLA)
+library(sf)
+library(splines)
+library(cowplot)
+library(spdep)
+library(jsonlite)
+library(scales,)
+library(units)
 
 
+
+source('R/mw_009_spacetime_model_functions.R')
+source('R/mw_011_evaluation_functions.R')
+source('R/mw_008_load_pop_covars.R')
+
+
+message("sourced functions")
 
 if( !dir.exists('outputs')){
   dir.create('outputs')
@@ -35,6 +65,9 @@ save.point = paste0('outputs/last_run_', Sys.time())
 dir.create(save.point)
 ww1 = readRDS(fs::path(controls$savepoint,"ww1.rds"))
 shapes = readRDS(fs::path(controls$savepoint,"shapes.rds"))
+
+
+message("Loaded data")
 
 #' 
 #' We now model all ARAs together. 
@@ -61,31 +94,26 @@ ww_all = ww1 %>%
 saveRDS(ww_all,file=paste0(save.point,"/ww_all.rds"))
 
 
-ww_all = ww_all %>% filter(date > lubridate::ymd(20220210) & date < lubridate::ymd(20220331))
-#ww_all = ww_all %>% filter(day1<20)
+
+#ww_all = ww_all %>% filter(date > starts[i] & date < starts[i] + 60)
+ww_all = ww_all %>% filter(day1>250, day1<350)
 
 ww_all = ww_all %>% complete(ara_id, day)
 
 ww_all$day1 = ww_all$day
 
-
+message("Combined ww data and covariates")
 # correspondence table
-corr_all = ww_all %>% 
-  group_by(ara_n,ara_id,ara_name,kt,pop,lab,lab_n,lab2,lab_n2,lab_method,lab_method_n,ara1,ara2,NUTS2_name) %>% 
-  count() %>% 
-  ungroup() 
-corr_all_ara = ww_all %>% 
-  group_by(ara1,ara_name,ara_id,kt,NUTS2_name) %>% 
-  count() %>% 
-  ungroup() 
+#corr_all = ww_all %>% 
+#  group_by(ara_n,ara_id,ara_name,kt,pop,lab,lab_n,lab2,lab_n2,lab_method,lab_method_n,ara1,ara2,NUTS2_name) %>% 
+#  count() %>% 
+#  ungroup() 
+#corr_all_ara = ww_all %>% 
+#  group_by(ara1,ara_name,ara_id,kt,NUTS2_name) %>% 
+#  count() %>% 
+#  ungroup() 
 #saveRDS(corr_all_ara,file=paste0("../",controls$savepoint,"corr_all_ara.rds"))
 
-if(!controls$rerun_models) {
-  mw_100_desc_table(ww_all) %>%
-    dplyr::mutate(across(everything(),as.character)) %>%
-    tidyr::gather() %>%
-    flextable::flextable(cwidth=c(4,4))
-}
 
 # Construct spatial model inputs
 
@@ -93,6 +121,9 @@ if(!controls$rerun_models) {
 catchments = shapes$ara_shp
 catchments = st_transform(catchments, 25830)
 catchment_centroids = st_centroid(catchments)
+
+
+message("Loaded shape data")
 
 # merge ww data with centroids to ensure geometries map properly
 
@@ -103,20 +134,40 @@ catchment_centroids = st_centroid(catchments)
 # Make sure no VL vals are 0 or negative - scale down viral loads to support INLA tractability 
 ww_all = ww_all %>% mutate(vl_stand = if_else(vl<=0, 1e-23, vl/mean(na.exclude(ww_all$vl))))
 ww_all = data.table(ww_all)[order(day, ara_id), ]
-ww_all$log_pop_dens = log(ww_all$pop_dens)
+ww_all[, log_pop_dens := log(pop_dens)]
+
+features = fread('outputs/ara_selections_mobility.csv')
+
+ara_ids = features[top_cen == T,]$ara_id
+
+ww_tofit = ww_all %>% filter(ara_id %in% ara_ids)
 
 # construct list of coordinates to match the viral load data time series data 
-catchment_centroids = merge(catchment_centroids, ww_all, by='ara_id', how='right')
+catchment_centroids = merge(catchment_centroids, ww_tofit, by='ara_id', how='right')
 centroid_coords = st_coordinates(catchment_centroids)
 colnames(centroid_coords) = c('X1', 'Y1')
 
+
+
+message("Prepared inputs")
+
+
+
+
+
+message("Running INLA model ... (expect a long pause)")
+
 # construct and run inla model in fit_inla_model() - in mw_009_spacetime_model_funtions.r
-inla_results = fit_inla_model(wwdata = ww_all, 
-                              catchment_centroids = catchment_centroids, 
+inla_results = fit_inla_model(wwdata = data.table(ww_tofit), 
+                              catchment_centroids = catchment_centroids,
+                              fam = 'gaussian',
                               plz_pos = plz_pos,
-                              save.point = save.point
+                              save.point = save.point,
+                              start = min(ww_tofit$date)
                               )
 
+
+message("Loading spatial data for projection")
 
 plz_pos = get_plz_centroids(crs_required = 25830)
 plz_coords = cbind(st_drop_geometry(plz_pos[,c('PLZ')]), st_coordinates(plz_pos) )
@@ -124,7 +175,7 @@ plz_coords = cbind(st_drop_geometry(plz_pos[,c('PLZ')]), st_coordinates(plz_pos)
 plz_area = get_plz_areas(crs_required = 25830)
 
 plz_covariate_matrix = mw_008_load_pop_covars(scale = 'PLZ')
-
+message("Loaded spatial data for projection")
 
 time_steps = seq(1, length(unique(ww_all$day)))
 
@@ -135,27 +186,43 @@ for(time in time_steps){
   pcoords = rbind(pcoords, pcoords_date)
 }
 names(pcoords) <- c("PLZ", "x", "y", "time")
-pred_coords_covars = merge(unique(pcoords), unique(plz_covariate_matrix), by=c('PLZ'), how='left')
 
-covariates = c('u20', 'o65', 'nec', 'log_pop_dens')
+message("Generated container for samples")
+message("Preparing projection covariates")
+pred_coords_covars = merge(unique(pcoords), unique(plz_covariate_matrix), by=c('PLZ'), how='left')
+message("Prepared projection covariates")
+
+
+message("Sampling the INLA model...")
+
+covariates = c('u20', 'o65', 'nec', 'pop_dens')
 get_samples_from_inla_model(inla_results = inla_results, 
                             covariates = covariates, 
                             pred_coords_covars = pred_coords_covars, 
                             nsims = 500, 
-                            model_dir = save.point)
+                            model_dir = save.point,
+                            fam='gaussian',
+                            start=min(ww_tofit$date))
 
-scores = score_by_catch(nsims = 500,
+message(paste0("Sampling complete... outputs saved at ", save.point))
+
+message("Scoring samples...")
+
+scores_graph = score_by_catch(nsims = 500,
                          savepath=save.point,
+                         start = min(ww_tofit$date),
                          pred_coords_covars = pred_coords_covars, 
                          models = c(''),
                          suffix='', 
-                         log_vals=T, 
+                         log_vals=F, 
                          buffer=0)
+message("Scores generated")
 
+message("Plotting outputs and saving")
 
-scores$all_catch_res_long[, ':='(pred_mean=mean(prediction), upper=quantile(prediction, 0.95, na.rm=T), lower=quantile(prediction, 0.05, na.rm=T)), by=c('time', 'ara_id', 'model')]
+scores_graph$all_catch_res_long[, ':='(pred_mean=mean(prediction), upper=quantile(prediction, 0.95, na.rm=T), lower=quantile(prediction, 0.05, na.rm=T)), by=c('time', 'ara_id', 'model')]
 
-catch_summary = unique(scores$all_catch_res_long[, c('time', 'ara_id', 'model', 'pred_mean', 'upper', 'lower', 'true_value')])
+catch_summary = unique(scores_graph$all_catch_res_long[, c('time', 'ara_id', 'model', 'pred_mean', 'upper', 'lower', 'true_value')])
 
 catch_summary %>% ggplot() + 
   
@@ -164,12 +231,12 @@ catch_summary %>% ggplot() +
   geom_line(aes(x=time, y=pred_mean, color=model), alpha=0.7) +
   geom_ribbon(aes(x=time, ymin=lower, ymax=upper, fill=model), alpha=0.2)+
   facet_wrap(~ara_id, ncol=10)+
-  coord_cartesian(ylim=c(0,5))+ 
+  coord_cartesian(ylim=c(0,7.5))+ 
   ylab('Viral load per person') + 
-  theme_minimal()#+
-  #geom_rect(data = unique(subset(catch_summary %>% select(name, model),(name %in% select_wwtps)  & !(name %in% clust_pop[rankpop==1, ]$ara_id))),# &  model=='all_daily')), 
-  #          fill = NA, colour = "limegreen", xmin = -Inf,xmax = Inf,
-  #          ymin = -Inf,ymax = Inf, linewidth=2)+
+  theme_minimal()+
+  geom_rect(data = unique(subset(catch_summary %>% select(ara_id, model),(ara_id %in% ara_ids))),# &  model=='all_daily')), 
+            fill = NA, colour = "limegreen", xmin = -Inf,xmax = Inf,
+            ymin = -Inf,ymax = Inf, linewidth=2)
   #geom_rect(data =unique(subset(catch_summary %>% select(name, model),!(name %in% select_wwtps)  & (name %in% clust_pop[rankpop==1, ]$ara_id))),# &  model=='all_daily'))), 
   #          fill = NA, colour = "red", xmin = -Inf,xmax = Inf,
   #          ymin = -Inf,ymax = Inf, linewidth=2)+
@@ -179,21 +246,25 @@ catch_summary %>% ggplot() +
 #
 #scale_y_continuous(trans='log')
 
+ggsave(paste0('catchplot_', starts[i], '.png'), height=10, width=15, units='in')
 
-
-dp_s = copy(ww_all)
+dp_s = copy(ww_tofit)
 
 index_s <- inla.stack.index(stack = inla_results$stk, tag = "est")$data
-dp_s$pred_mean = inla_results$res$summary.fitted.values[index_s, "mean"]
-dp_s$pred_lower = inla_results$res$summary.fitted.values[index_s, "0.025quant"]
-dp_s$pred_upper = inla_results$res$summary.fitted.values[index_s, "0.975quant"]
+dp_s$pred_mean = exp(inla_results$res$summary.fitted.values[index_s, "mean"])
+dp_s$pred_lower = exp(inla_results$res$summary.fitted.values[index_s, "0.025quant"])
+dp_s$pred_upper = exp(inla_results$res$summary.fitted.values[index_s, "0.975quant"])
+
+
 
 
 
 ggplot(dp_s[below_lod==0 & below_loq==0, ]) + 
-  geom_point(aes(x=day1, y=exp(vl_stand)), size=0.3) + 
-  geom_line(aes(x=day1, y=exp(pred_mean)), color='red', linewidth=0.2, alpha=0.8)+
-  geom_ribbon(aes(x=day1, ymin=exp(pred_lower), ymax=exp(pred_upper)), fill='red', alpha=0.2)+
-  facet_wrap(~ara_id)+
+  geom_point(aes(x=date, y=vl_stand), size=0.3) + 
+  geom_line(aes(x=date, y=log(pred_mean)), color='red', linewidth=0.2, alpha=0.8)+
+  geom_ribbon(aes(x=date, ymin=log(pred_lower), ymax=log(pred_upper)), fill='red', alpha=0.2)+
+  facet_wrap(~ara_id)#+
   scale_y_continuous(trans='log')
+
+ggsave(paste0('ppp_', starts[i], '.png'), height=10, width=15, units='in')
 

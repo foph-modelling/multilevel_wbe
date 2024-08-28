@@ -31,7 +31,7 @@ if( !dir.exists('outputs')){
 }
 
 
-save.point = paste0('outputs/last_run_', Sys.time())
+save.point = paste0('outputs/last_run_select', Sys.time())
 dir.create(save.point)
 ww1 = readRDS(fs::path(controls$savepoint,"ww1.rds"))
 shapes = readRDS(fs::path(controls$savepoint,"shapes.rds"))
@@ -61,12 +61,14 @@ ww_all = ww1 %>%
 saveRDS(ww_all,file=paste0(save.point,"/ww_all.rds"))
 
 
-ww_all = ww_all %>% filter(date > lubridate::ymd(20220210) & date < lubridate::ymd(20220331))
+ww_all = ww_all %>% filter(date > lubridate::ymd(20220210) & date < lubridate::ymd(20220430))
 #ww_all = ww_all %>% filter(day1<20)
 
 ww_all = ww_all %>% complete(ara_id, day)
 
 ww_all$day1 = ww_all$day
+
+ww_all$log_pop_dens = log(ww_all$pop_dens)
 
 
 # correspondence table
@@ -102,19 +104,23 @@ catchment_centroids = st_centroid(catchments)
 
 # Make sure no VL vals are 0 or negative - scale down viral loads to support INLA tractability 
 ww_all = ww_all %>% mutate(vl_stand = if_else(vl<=0, 1e-23, vl/mean(na.exclude(ww_all$vl))))
-ww_all = data.table(ww_all)[order(day, ara_id), ]
-ww_all$log_pop_dens = log(ww_all$pop_dens)
+ww_all = data.table(ww_all)[order(day, ara_id),]
+
+
+#features = fread('outputs/ara_selections_mobility.csv')
+ara_ids = features[top_bet == T,]$ara_id
+ww_tofit = ww_all[!(ara_id %in% ara_ids) & date > lubridate::ymd(20220320),  vl_stand := NA]
 
 # construct list of coordinates to match the viral load data time series data 
-catchment_centroids = merge(catchment_centroids, ww_all, by='ara_id', how='right')
+catchment_centroids = merge(catchment_centroids, ww_tofit, by='ara_id', how='right')
 centroid_coords = st_coordinates(catchment_centroids)
 colnames(centroid_coords) = c('X1', 'Y1')
 
 # construct and run inla model in fit_inla_model() - in mw_009_spacetime_model_funtions.r
-inla_results = fit_inla_model(wwdata = ww_all, 
+inla_results_select = fit_inla_model(wwdata = ww_tofit, 
                               catchment_centroids = catchment_centroids, 
                               plz_pos = plz_pos,
-                              save.point = save.point
+                              save.point = save.point, 
                               )
 
 
@@ -138,7 +144,7 @@ names(pcoords) <- c("PLZ", "x", "y", "time")
 pred_coords_covars = merge(unique(pcoords), unique(plz_covariate_matrix), by=c('PLZ'), how='left')
 
 covariates = c('u20', 'o65', 'nec', 'log_pop_dens')
-get_samples_from_inla_model(inla_results = inla_results, 
+get_samples_from_inla_model(inla_results = inla_results_select, 
                             covariates = covariates, 
                             pred_coords_covars = pred_coords_covars, 
                             nsims = 500, 

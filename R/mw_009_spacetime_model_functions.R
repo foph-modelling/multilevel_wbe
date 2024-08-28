@@ -21,7 +21,7 @@ fit_inla_model = function(wwdata,
                           logvl=FALSE, 
                           save.point = NULL,
                           start = '',
-                          covariates = c('u20', 'o65', 'nec', 'pop_dens', 'lab_method')
+                          covariates = c('u20', 'o65', 'nec', 'pop_dens', 'lab_method', 'log_pop_dens')
                           )
 {
   if(is.null(save.point)){
@@ -119,6 +119,7 @@ fit_inla_model = function(wwdata,
   
   formula <- y ~ 0 + 
                  b0 + u20 + o65 + nec  + log_pop_dens + 
+                 f(lab_method, model='iid') + 
                  f(time.index, model='rw1', hyper=rprior1) +
                  f(s, model = spde, group = s.group, control.group = list(model = "ar1", hyper = rprior3))
   # run the model 
