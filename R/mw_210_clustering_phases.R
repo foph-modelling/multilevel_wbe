@@ -732,3 +732,19 @@ deg_graph_map +  bet_graph_map +  cen_graph_map +  pag_graph_map +
   plot_layout(design = layout, guides = "collect") 
 
 
+ggplot() + geom_sf(data = shapes$ara_shp) + geom_sf(data = shapes$ara_shp %>% filter(ara_id %in% aras), aes(fill=ara_id))
+
+select_shapes = shapes$ara_shp %>% mutate(selection = 0) %>% filter(ara_id == 0)
+for(name in 1:length(selction_ids)){
+  selection_n = shapes$ara_shp %>% filter(ara_id %in% selction_ids[[name]]) %>% mutate(selection=name)
+  select_shapes = rbind(select_shapes, selection_n)
+}
+
+
+ggplot() + 
+  geom_sf(data = shapes$ara_shp) + 
+  geom_sf(data = select_shapes, aes(fill=ara_id)) + 
+  facet_wrap(~selection)+
+  scale_fill_discrete(guide=F)+
+  theme_minimal()
+

@@ -42,7 +42,7 @@ project_to_cantons = function(savepath, pcoords, start, catchments, models=c('')
     
     
     sims.pred.t = readRDS(res_path)
-    mod_inps = readRDS(inp_path)
+    #mod_inps = readRDS(inp_path)
     
     #pcoords = pred_coords_covars
     pcoords = pcoords[order(time, PLZ),]
@@ -126,17 +126,17 @@ project_to_cantons = function(savepath, pcoords, start, catchments, models=c('')
   cant_summary = unique(all_cant_res_long[, c('time', 'NAME', 'model', 'pred_mean', 'upper', 'lower')])
   
   cant_summary %>% ggplot() + 
-    geom_line(aes(x=time, y=pred_mean, color=model), alpha=0.7) +
-    geom_ribbon(aes(x=time, ymin=lower, ymax=upper, fill=model), alpha=0.2)+
+    geom_line(aes(x=time, y=pred_mean, color=as.character(model), group=model), alpha=0.7) +
+    geom_ribbon(aes(x=time, ymin=lower, ymax=upper, fill=as.character(model), group=model), alpha=0.2)+
     #geom_line(aes(x=time, y=exp(pred_mean), color=model), alpha=0.7) +
     #geom_ribbon(aes(x=time, ymin=exp(lower), ymax=exp(upper), fill=model), alpha=0.2)+
-    geom_point(data=hosps_ct[day %in% cant_summary$time], aes(x=day, y=mean7d*1e6/(4*pop)), color='black', size=0.3)+
+    geom_point(data=hosps_ct[day %in% cant_summary$time][day %in% cant_summary$time], aes(x=day, y=mean7d*1e6/(4*pop)), color='black', size=0.3)+
     facet_wrap(~NAME, ncol=7)+
     ylab('Viral load per person')+
     coord_cartesian(ylim=c(0,10))+ 
     theme_minimal() + 
     theme(legend.position = 'none')
-  ggsave('plots/cantons_vl_plus_hosps.png', width = 15, height=10, units='in')
+  ggsave(paste0(save.point, '/cantons_vl_plus_hosps.png'), width = 15, height=10, units='in')
   
   
   
@@ -153,8 +153,8 @@ project_to_cantons = function(savepath, pcoords, start, catchments, models=c('')
   
  
   cant_summary %>% ggplot() + 
-    geom_line(aes(x=time, y=pred_mean, color=model), alpha=0.7) +
-    geom_ribbon(aes(x=time, ymin=lower, ymax=upper, fill=model), alpha=0.2)+
+    geom_line(aes(x=time, y=pred_mean, color=as.character(model), group=model), alpha=0.7) +
+    geom_ribbon(aes(x=time, ymin=lower, ymax=upper, fill=as.character(model), group=model), alpha=0.2)+
     #geom_line(aes(x=time, y=exp(pred_mean), color=model), alpha=0.7) +
     #geom_ribbon(aes(x=time, ymin=exp(lower), ymax=exp(upper), fill=model), alpha=0.2)+
     geom_point(data=cases_ct[day %in% cant_summary$time], aes(x=day, y=mean7d*8e2/pop), color='black', size=0.3)+
@@ -163,7 +163,13 @@ project_to_cantons = function(savepath, pcoords, start, catchments, models=c('')
     coord_cartesian(ylim=c(0,10))+ 
     theme_minimal() + 
     theme(legend.position = 'none')
-  ggsave('plots/cantons_vl_plus_cases.png', width = 15, height=10, units='in')
+  ggsave(paste0(save.point, '/cantons_vl_plus_cases.png'), width = 15, height=10, units='in')
+  
+  saveRDS(cant_summary, paste0(save.point, '/cant_summary.rds'))
+  saveRDS(cases_ct, paste0(save.point, '/cases_ct.rds'))
+  saveRDS(hosps_ct, paste0(save.point, '/hosps_ct.rds'))
+  saveRDS(all_cant_res_long, paste0(save.point, '/all_cant_res_long.rds'))
+  
 }
 
 

@@ -6,11 +6,10 @@ ww_all = readRDS(file = paste0(save.point, '/ww_all.rds'))
 catchment_centroids = readRDS(paste0(save.point, '/catchment_centroids.rds'))
 selction_ids = readRDS('outputs/select_catchments.rds')
 
-for (selection in 1:6){
-  ara_ids = selction_ids[[selection]]
+for (selection in 0:0){
   
-  ww_tofit = copy(ww_all)
-  ww_tofit = ww_tofit[!(ara_id %in% ara_ids) & date > lubridate::ymd(20220320),  vl_stand := NA]
+  ww_tofit = data.table(ww_all)
+  #ww_tofit = ww_tofit[!(ara_id %in% ara_ids) & date > lubridate::ymd(20220320),  vl_stand := NA]
   
   # construct list of coordinates to match the viral load data time series data 
   catchment_centroids_select = merge(catchment_centroids, ww_tofit, by='ara_id', how='right')

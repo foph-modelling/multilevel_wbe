@@ -589,3 +589,25 @@ select_catchments = list(
 
 
 saveRDS(object = select_catchments, file = 'outputs/select_catchments.rds')
+
+
+select_shapes = shapes$ara_shp %>% mutate(selection = 0) %>% filter(ara_id == 0)
+for(name in 1:length(selction_ids)){
+  selection_n = shapes$ara_shp %>% filter(ara_id %in% selction_ids[[name]]) %>% mutate(selection=name)
+  select_shapes = rbind(select_shapes, selection_n)
+}
+
+
+ggplot() + 
+  geom_sf(data = shapes$canton_shp, alpha=0.2) + 
+  geom_sf(data = shapes$ara_shp, alpha=0.2, color=NA, fill='lightseagreen') + 
+  
+  geom_sf(data = select_shapes, aes(fill=ara_id)) + 
+  facet_wrap(~selection, labeller= labeller(selection = model_names))+
+  scale_fill_discrete(guide=F)+
+  theme_minimal() + 
+  theme(panel.grid=element_blank(), 
+        axis.text = element_blank(), 
+        axis.ticks = element_blank())
+
+

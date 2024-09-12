@@ -21,7 +21,8 @@ fit_inla_model = function(wwdata,
                           logvl=FALSE, 
                           save.point = NULL,
                           start = '',
-                          covariates = c('u20', 'o65', 'nec', 'pop_dens', 'lab_method', 'log_pop_dens')
+                          covariates = c('u20', 'o65', 'nec', 'pop_dens', 'lab_method', 'log_pop_dens'),
+                          fit_lab_method=T
                           )
 {
   if(is.null(save.point)){
@@ -60,7 +61,7 @@ fit_inla_model = function(wwdata,
   # generate stochastic pdes for inla model
   spde <- inla.spde2.pcmatern(
     mesh = mesh, alpha = 2,
-    prior.range = c(100000, 0.01), # P(range < 10000) = 0.01
+    prior.range = c(100000, 0.01), # P(range < 100000) = 0.01
     prior.sigma = c(0.5, 0.01) # P(sigma > 0.5) = 0.01
   )
   
@@ -116,7 +117,21 @@ fit_inla_model = function(wwdata,
   
   # model formula 
   
-  
+  if(fit_lab_method == T){ 
+    
+    formula <- y ~ 0 + 
+      b0 + u20 + o65 + nec  + log_pop_dens + 
+      f(lab_method, model='iid') + 
+      f(time.index, model='rw1', hyper=rprior1) +
+      f(s, model = spde, group = s.group, control.group = list(model = "ar1", hyper = rprior3))
+    
+    } else{
+    formula <- y ~ 0 + 
+      b0 + u20 + o65 + nec  + log_pop_dens +
+      f(time.index, model='rw1', hyper=rprior1) +
+      f(s, model = spde, group = s.group, control.group = list(model = "ar1", hyper = rprior3))
+    
+    }
   formula <- y ~ 0 + 
                  b0 + u20 + o65 + nec  + log_pop_dens + 
                  f(lab_method, model='iid') + 
@@ -323,6 +338,7 @@ get_samples_from_inla_model = function(inla_results, covariates, pred_coords_cov
   d = dim(s.by.time[[1]])
   s.by.time.a <- array(0,c(l,d[1],d[2]))
   for (i in 1:l) {
+    print(i)
     s.by.time.a[i,,] <- s.by.time[[i]]
   }
   
@@ -366,9 +382,18 @@ get_samples_from_inla_model = function(inla_results, covariates, pred_coords_cov
   message(paste0('\n \nsaving predictions at: ', model_dir,'/posterior_predictions_', as.character(nsims), '_', model, suffix, '.rds'))
   
   saveRDS(object = sims.pred.t, file=paste0(model_dir,'/', start, 'posterior_predictions_', as.character(nsims), '_', model, suffix, '.rds' ))
-  saveRDS(object = list(intercept, fixed.effects.in.order, fixed, eta, epsilon),file=paste0(model_dir,'/', start, 'posterior_params_', as.character(nsims), '_', model, suffix, '.rds' ))
+  #saveRDS(object = list(intercept, fixed.effects.in.order, fixed, eta, epsilon),file=paste0(model_dir,'/', start, 'posterior_params_', as.character(nsims), '_', model, suffix, '.rds' ))
+  
+  message('calculating lab effect ...')
+  
+  labs = inla_results$res$summary.random$lab_method$ID
+  
+  lab_effect <- INLA::inla.posterior.sample.eval('lab_method',samples)
+  
+  rownames(lab_effect) = labs
   
   
+  saveRDS(object = lab_effect ,file=paste0(model_dir,'/', start, 'lab_effect_', as.character(nsims), '_', model, suffix, '.rds' ))
   
 }
 

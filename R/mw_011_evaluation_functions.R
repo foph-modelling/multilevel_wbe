@@ -5,13 +5,15 @@ library(data.table)
 
 score_by_catch = function(nsims = 500,
                           savepath,
+                          ww_all,
                           start='',
                           pred_coords_covars,
                           covariate_matrix,
                           models = c(''),
                           suffix='', 
                           log_vals=F, 
-                          buffer=0){
+                          buffer=0, 
+                          use_default_lab_effect = F){
   if(suffix != ''){
     suffix=paste0('_', suffix)
   }
@@ -21,11 +23,17 @@ score_by_catch = function(nsims = 500,
     
     res_path = paste0(savepath, '/', start, 'posterior_predictions_', nsims, '_', model, suffix, '.rds')
     inp_path = paste0(savepath, '/', start, 'model_inputs.rds')
+    lab_path = paste0(savepath, '/', start, 'lab_effect_', nsims, '_', model, suffix, '.rds')
+    
+    if(use_default_lab_effect){
+      lab_path = paste0(savepath, '/', start, 'lab_effect_', nsims, '_default.rds')
+    }
     
     message(paste0('loading data from ', res_path))
     
     sims.pred.t = readRDS(res_path)
-    mod_inps = readRDS(inp_path)
+    #mod_inps = readRDS(inp_path)
+    lab_effect = readRDS(lab_path)
     
     pcoords = pred_coords_covars
     
@@ -66,18 +74,32 @@ score_by_catch = function(nsims = 500,
     
     samp_vl_catchments = weighted_ww_vl_plz_catchments[,c('ara_id', 'time', ..sampcolscatch)]
     
+    
+    
+    
+    
     remove(weighted_ww_vl_plz_catchments)
     samp_vl_catchment_unique = data.table()
     for(n in unique(samp_vl_catchments$ara_id)){
+      print(n)
       for(t in unique(samp_vl_catchments$t)){
-        samp_vl_catchment_unique = rbind(samp_vl_catchment_unique, unique(samp_vl_catchments[ara_id==n & time==t,]))
+        samp_vl_catchments_ara = unique(samp_vl_catchments[ara_id==n & time==t,])
+        if(length(lab_effect[lab_method_ara[ara_id == n,]$lab_method,]) != 0){
+          
+          samp_vl_catchments_ara = data.table(t(c(ara_id = n, time = t, unlist(samp_vl_catchments_ara[,-c('ara_id', 'time')] + lab_effect[lab_method_ara[ara_id == n,]$lab_method,]))))
+        }
+        samp_vl_catchment_unique = rbind(samp_vl_catchment_unique, samp_vl_catchments_ara)
+       
       }
     }
     
     samp_vl_catchment_unique[, ara_id := as.character(ara_id)]
     true_values = samp_vl_catchment_unique[,c('ara_id', 'time')]
+    
+    
+    #ww_all[vl_stand > quantile(ww_all$vl_stand, 0.975, na.rm=T), vl_stand := quantile(ww_all$vl_stand, 0.975, na.rm=T)]
 
-    true_values = merge(true_values, ww_all[, c('ara_id', 'day', 'vl_stand')] %>% mutate(time=day - min(ww_all$day)), on=c('ara_id', 'time'))
+    true_values = merge(true_values, ww_all[, c('ara_id', 'day', 'vl_smooth')] %>% mutate(time=day - min(ww_all$day)), on=c('ara_id', 'time'), all.y=T)
     
     
     #mask = which(true_values$name == n & !is.na(true_values$vl_mean7d_smooth))
@@ -87,11 +109,11 @@ score_by_catch = function(nsims = 500,
     
     samp_true_catchment = merge(true_values, samp_vl_catchment_unique, on=c('time', 'ara_id'))
     
-    samp_true_catchment_long = melt(samp_true_catchment, id.vars = c('ara_id', 'time', 'vl_stand'), measure.vars = sampcolscatch, variable.name = 'sample', value.name = 'prediction')
+    samp_true_catchment_long = melt(samp_true_catchment, id.vars = c('ara_id', 'time', 'vl_smooth'), measure.vars = sampcolscatch, variable.name = 'sample', value.name = 'prediction')
     
+    #samp_true_catchment_long[, vl_smooth := zoo::rollmean(vl_stand, 7, na.rm=T, fill = T), by=c('ara_id')]
     
-    
-    samp_true_catchment_long[, true_value:=vl_stand]
+    samp_true_catchment_long[, true_value:=vl_smooth]
     
     #if(log_vals==T){
     #  samp_true_catchment_long[, true_value := log(true_value + 1e-23)]
@@ -104,7 +126,7 @@ score_by_catch = function(nsims = 500,
     
     samp_true_catchment_long[, model := model]
     
-    all_catch_res_long = rbind(all_catch_res_long, samp_true_catchment_long[,-c('vl_stand')])
+    all_catch_res_long = rbind(all_catch_res_long, samp_true_catchment_long[,-c('vl_stand', 'vl_smooth')])
     
   }
   
