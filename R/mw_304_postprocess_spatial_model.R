@@ -1,5 +1,5 @@
 pred_coords_covars = readRDS(paste0(save.point, '/pred_coords_covars.rds'))
-for(selection in 1:6){
+for(selection in c(1,2,3,4,7)){
   inla_results = readRDS(paste0(save.point, 'model_', selection, '.rds'))
  
   covariates = c('u20', 'o65', 'nec', 'log_pop_dens')
@@ -16,7 +16,7 @@ scores = score_by_catch(nsims = 500,
                         ww_all = ww_all,
                         savepath=save.point,
                         pred_coords_covars = pred_coords_covars, 
-                        models = c(0),
+                        models = c(1,2,3,4,7),
                         suffix='', 
                         log_vals=T)
 
@@ -39,7 +39,7 @@ catch_summary %>% ggplot() +
   theme_minimal()#+
 
 
-scores_by_model = summarise_scores(scores$scores[time>40,], by = c("model"))
+scores_by_model = summarise_scores(scores$scores, by = c("model"))
 scores_by_model_long = melt(scores_by_model, id.vars=c('model'), measure.vars = colnames(scores_by_model[,-c('model')]), value.name = 'score', variable.name='metric')
 
 scores_by_model_long %>% ggplot() + 
