@@ -6,9 +6,9 @@ true_shapes[, mean_disc := infotheo::discretize(mean, )]
 
 
 
-entropies = data.table(ara_id=unique(ww_all$ara_id), 
+entropies = data.table(ara_id=unique(true_shapes$ara_id), 
                       entropy= 
-                        sapply(unique(ww_all$ara_id), 
+                        sapply(unique(true_shapes$ara_id), 
                                function(x){infotheo::entropy(true_shapes[ara_id == x]$mean_disc)})
                       )
 
