@@ -74,7 +74,5 @@ rmarkdown::render("R/mw_201_model_dev_A3.R",
 
 # Block 3: paper -------------------------------------------------------
 
-# model development
-rmarkdown::render("R/mw_201_model_dev_A1.R",
-                  params=list(controls=controls),
-                  output_file=file.path("../",controls$savepoint,"model_dev_A1.html"),clean=FALSE)
+# 
+source("R/mw_301_manuscript.R")

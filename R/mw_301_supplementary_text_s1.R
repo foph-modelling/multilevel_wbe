@@ -1,0 +1,106 @@
+#' ---
+#' title: "WBE for SARS-CoV-2 in Switzerland: data description "
+#' author: "Julien Riou"
+#' date: "`r Sys.Date()`"
+#' params:
+#'    controls: controls
+#' output:
+#'    html_document:
+#'      code_folding : hide
+#'      number_sections: false
+#'      highlight: pygments
+#'      theme: cosmo
+#'      link-citations: true
+#' ---
+
+
+#+ results="hide", warnings="false", echo="false"
+source("setup.R")
+ww1 = readRDS(fs::path("../",controls$savepoint,"ww1.rds"))
+shapes = readRDS(fs::path("../",controls$savepoint,"shapes.rds"))
+
+
+#' # Data
+
+ww_all %>% 
+  filter(below_lod==0,below_lod==0) %>% 
+  group_by(wwtp_index) %>% 
+  summarise(vl=mean(vl)) %>% 
+  summarise(min=min(vl),max=max(vl),ratio=max(vl)/min(vl))
+
+#' # Supplementary methods
+
+# methods model
+
+# model fit
+
+#' # Supplementary results
+
+mw_141_crude_correlation(ww_all,corr_all_ara)
+
+# coeff of determination
+
+
+#' 
+#' 
+#' #' We use measurements of SARS-CoV-2 concentration in wastewater from multiple ARAs in Switzerland in 2022 and 2023. 
+#' #' Viral concentration (*C*, unit: gene copies [gc] per liter) is transformed into viral load (*V*; unit: gc per day per 100,000) 
+#' #' using the flow of wastewater on the same day (*F*) and the size of the population covered (*P*):
+#' #' $$
+#' #'  V = \frac{C \times F}{P/100,000}
+#' #' $$
+#' #' Table 1 provides a summary of the available data. 
+#' #' In total 118 ARAs reported data over the full period.
+#' #' Reporting frequencies and periods varied depending on the ARA, with daily measurements for the full period only available 
+#' #' in a few cases (Figure 1). ARAs also sent their samples to different laboratories. In some cases, there were also changes 
+#' #' in the laboratory method used.
+#' #' SARS-CoV-2 could be detected in the wastewater in most cases, with a few occurrences of no detection (below LOD) and some measurements
+#' #' below the limit of quantification (LOQ), leading to higher measurement error (Figure 2).
+#' #' Viral load varied over time, with large heterogeneity across ARAs, although some patterns emerge on visual inspection (Figure 3). 
+#' #' We also consider covariates at the ARA level. While population is already accounted for in the computation of 
+#' #' the viral load, covariates included total population covered by the ARA. We also considered the proportion aged below 20 
+#' #' or above 65, the proportion of non-Swiss non-EU citizen, the average Swiss index of socio-economic position (weighted by hectare),
+#' #' and the *employment factor* (working places divided by population).
+#' #' 
+#' 
+#' #+ desc_tab
+#' mw_100_desc_table(ww1) %>% 
+#'   dplyr::mutate(across(everything(),as.character)) %>% 
+#'   tidyr::gather() %>% 
+#'   dplyr::rename(Variable=key,Value=value) %>% 
+#'   flextable::flextable(cwidth=c(4,10)) 
+#' #' **Table 1.** Summary of available data.
+#' 
+#' #+ desc_tab_nuts2
+#' mw_100_desc_table(ww1,NUTS2_name) %>% 
+#'   dplyr::select(1:7)  %>% 
+#'   flextable::flextable(cwidth=rep(4,7)) 
+#' #' **Table 2.** Summary of available data by NUTS-2 region.
+#' 
+#' #+ fig_missing, fig.width=8, fig.height=10
+#' mw_101_fig_missing(ww1)
+#' #' **Figure 1.** Available measurements over time by ARA (grouped by canton).
+#' 
+#' #+ map_missing, fig.width=8, fig.height=6
+#' mw_110_map_missing(ww1,shapes)
+#' #' **Figure 2.** Total measurements by ARA.
+#' 
+#' #+ fig_detect, fig.width=8, fig.height=10
+#' mw_103_fig_detect(ww1)
+#' #' **Figure 3.** SARS-CoV-2 detection in wastewater over time by ARA.
+#' 
+#' #+ fig_vl2, fig.width=8, fig.height=6
+#' mw_106_fig_vl_time(ww1)
+#' #' **Figure 4.** Daily SARS-CoV-2 viral load in wastewater by ARA (removing values below the LOD or LOQ).
+#' 
+#' #+ fig_vl, fig.width=8, fig.height=10
+#' mw_104_fig_vl(ww1)
+#' #' **Figure 5.** Weekly median SARS-CoV-2 viral load in wastewater by ARA (removing values below the LOD or LOQ). Dashed lines show the delimitation in four periods.
+#' 
+#' #+ map_vl, fig.width=8, fig.height=14
+#' mw_111_map_vl(ww1,shapes)
+#' #' **Figure 6.** Median SARS-CoV-2 viral load in wastewater by ARA by period.
+#' 
+#' 
+#' 
+#' 

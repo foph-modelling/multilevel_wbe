@@ -21,11 +21,14 @@ pacman::p_load(Hmisc,
                spdep,
                jsonlite,
                scales, 
-               units)
+               units,
+               ggnewscale)
 
 # set language ----
 
 Sys.setenv(LANG = "en")
+Sys.setlocale("LC_ALL", "English")
+
 
 # source functions ----
 fili = dir(path = "R",pattern="mw_[01456789]",full.names = TRUE)
