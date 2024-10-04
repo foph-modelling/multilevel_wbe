@@ -57,8 +57,8 @@ tt1 = tt1 %>%
   
   
 tt_clusters = tibble()
-  for(peri in 1:5){
-    tt = tt1  %>% filter(period==peri)
+  for(peri in 1:4){
+    tt = tt1  %>% filter(period %in% c(3))
     tt_masked = left_join(tt, ww %>% select(date, ara_name, vl), by=c('date', 'ara_name'))
     mask_in_period = tt_masked %>% 
       group_by(ara_id) %>%
@@ -91,7 +91,7 @@ tt_clusters = tibble()
     
     clustout_euclidean = dtwclust::tsclust(series=dtwclust::zscore(tt_list), 
                                            type='partitional', 
-                                           distance = 'sbd',
+                                           distance = 'dtw2',
                                            k=2:15, 
                                            return.objects=TRUE)
     
@@ -148,10 +148,11 @@ tt_clusters = tibble()
       ara_name = names(tt_list)
     )
     
-    cluster_df[, cluster_tad:=clustout_tadpole[[9]]@cluster]
+    cluster_df[, cluster_tad:=clustout_tadpole[[4]]@cluster]
     
     tt_cluster = merge(tt, cluster_df, by=c('ara_name'))
     
+    dtwclust::interactive_clustering(series = tt1)
     
     g_clust = tt_cluster%>% 
       ggplot() +
@@ -173,8 +174,9 @@ tt_clusters = tibble()
   }
 
 tt_cluster_sf_tad = merge(shapes$ara_shp, unique(tt_clusters[,c('ara_id', 'ara_name', 'cluster_tad', 'period')], by=c('ara_id')))
+tt_cluster_sf_tad = merge(shapes$ara_shp, unique(tt_cluster[,c('ara_id', 'ara_name', 'cluster_tad')], by=c('ara_id')))
 
-map= tt_cluster_sf_tad %>% ggplot() + geom_sf(aes(fill = as.character(cluster_tad))) + facet_wrap(~period)
+map= tt_cluster_sf_tad %>% ggplot() + geom_sf(aes(fill = as.character(cluster_tad)))# + facet_wrap(~period)
 
 
 
@@ -317,3 +319,291 @@ te_dt = rbind(tt_ind, unlist())
 image(matrix(unlist(te_mat_list), nrow=length(tt_list)))
 
 
+
+
+
+
+
+
+
+## ------  compare distances in clusters ----------
+
+av_dists_all = data.table()
+tt_cluster_all = data.table()
+centroid_distances_all = data.table()
+
+for (peri in 1:4){
+  tt = data.table(tt1  %>% filter(period %in% c(peri)))
+  tt_masked = left_join(tt, ww %>% select(date, ara_name, vl), by=c('date', 'ara_name'))
+  mask_in_period = tt_masked %>% 
+    group_by(ara_id) %>%
+    summarise(x = sum(vl, na.rm = TRUE))
+  
+  mask_dates= tt_masked %>% 
+    group_by(ara_id, day) %>%
+    mutate(include = !is.na(vl))
+  
+  
+  mask_from_na = mask_dates %>% 
+    group_by(ara_id) %>%
+    mutate(x = sum(include, na.rm = TRUE)/length(include))
+  
+  aras_to_include_na = unique(mask_from_na %>% filter(x > 0.3) %>% select(ara_id))
+  
+  
+  aras_to_include = mask_in_period %>% filter(x != 0) %>% select(ara_id)
+  
+  tt =  tt %>% filter((ara_id %in% unlist(aras_to_include)))
+  tt =  tt %>% filter((ara_id %in% unlist(aras_to_include_na)))
+  
+  
+  tt_wide = data.table(dcast(tt, formula = day ~ ara_name, value.var = 'mean'))
+  
+  tt_list = as.list(tt_wide[,-c('day')])
+  
+  
+  
+  
+  clustout_euclidean = dtwclust::tsclust(series=dtwclust::zscore(tt_list), 
+                                         type='hierarchical', 
+                                         distance = 'dtw2',
+                                         k=2:25, 
+                                         return.objects=TRUE)
+  names(clustout_euclidean) <- paste0(2:25)
+  cvi_out = t(sapply(clustout_euclidean, dtwclust::cvi, type = "internal"))
+  cvi_out = data.frame(cvi_out) %>% mutate(n_clusters = as.numeric(names(clustout_euclidean) ))
+  cvi_out = cvi_out %>% pivot_longer(!n_clusters, names_to = 'type', values_to = 'score')
+  cvi_out %>% 
+    ggplot() +
+    geom_line(aes(x=n_clusters, y=score, color=type))+
+    facet_wrap(~type, scale='free')
+  
+  
+  plot(sapply(1:24, function(x){mean(clustout_euclidean[[x]]@clusinfo$size * clustout_euclidean[[x]]@clusinfo$av_dist/sum(clustout_euclidean[[x]]@clusinfo$size))})) 
+  points(sapply(1:24, function(x){max(clustout_euclidean[[x]]@clusinfo$size * clustout_euclidean[[x]]@clusinfo$av_dist/sum(clustout_euclidean[[x]]@clusinfo$size))})) 
+  
+  
+  distmat = data.table(clustout_euclidean[[7]]@distmat)
+  aras = rownames(clustout_euclidean[[7]]@distmat)
+  distmat[, ara_1 := aras]
+  distances = melt(distmat, id.vars = 'ara_1', variable.name = 'ara_2', value.name = 'Dist')
+  
+  clusters = data.table(ara = aras, cluster = clustout_euclidean[[7]]@cluster)
+  
+  distances_clust = merge(distances, clusters, by.x = 'ara_1', by.y = 'ara')
+  distances_clust = distances_clust[, cluster_1 := cluster][,-'cluster']
+  distances_clust = merge(distances_clust, clusters, by.x = 'ara_2', by.y = 'ara')
+  distances_clust = distances_clust[, cluster_2 := cluster][,-'cluster']
+  
+  
+  compare_distances = function(distances_clust, clust, ara){
+    distances_to_common_clust = distances_clust[ara_1 == ara & ara_2 != ara & cluster_2 == clust, ]$Dist
+    distances_to_other_clusts = distances_clust[ara_1 == ara  & cluster_2 != clust, ]$Dist
+    quantile(distances_to_common_clust, probs = 0.5) < quantile(distances_to_other_clusts, probs = 0.05)
+  }
+  
+  
+  
+  clusters[, strong_clust := mapply(x=clusters$ara, y=clusters$cluster, FUN = function(x,y){compare_distances(distances_clust,y,x)}) ]
+  
+  
+  tt_cluster = merge(tt, clusters, by.x=c('ara_name'), by.y='ara')
+  
+  
+  
+  
+  
+  tt_cluster_sf = merge(shapes$ara_shp, unique(tt_cluster[,c('ara_id', 'ara_name', 'cluster', 'strong_clust')], by=c('ara_id')))
+  map= 
+    ggplot() + 
+    geom_sf(data=tt_cluster_sf, aes(fill = as.character(cluster)))+ 
+    geom_sf(data=tt_cluster_sf %>% filter(ara_name %in% cent_aras), color='limegreen', linewidth=1, fill=NA)# + facet_wrap(~period)
+  
+  
+  
+  ggsave(paste0('../plots/map_period_', peri, '.png'))
+  
+  cent_aras=names(clustout_euclidean[[7]]@centroids)
+  map= 
+    ggplot() + 
+    geom_sf(data=tt_cluster_sf %>% filter(strong_clust==T), aes(fill = as.character(cluster))) + 
+    geom_sf(data=tt_cluster_sf %>% filter(strong_clust==F), aes(fill = as.character(cluster)), alpha=0.2) + 
+    geom_sf(data=tt_cluster_sf %>% filter(ara_name %in% cent_aras), color='limegreen', linewidth=1, fill=NA)# + facet_wrap(~period)
+  
+  
+  ggsave(paste0('../plots/map_period_strong_', peri, '.png'))
+  
+  tt_cluster[, norm_mean := dtwclust::zscore(mean), by=c('ara_id')]
+  
+  g_clust = tt_cluster%>% #filter(strong_clust==T)%>% 
+    ggplot() +
+    geom_hline(yintercept=1,linetype=2,alpha=.5) +
+    #geom_ribbon(aes(x=date,ymin=exp(`0.025quant`),ymax=exp(`0.975quant`),fill=NUTS2_name),alpha=.5) +
+    geom_line(aes(x=date,y=exp(norm_mean), color=NUTS2_name, group=ara_name), alpha=0.5) +
+    geom_line( data = tt_cluster%>%filter(ara_name %in% cent_aras), aes(x=date,y=exp(norm_mean), group=ara_name), color='limegreen', linetype=2, linewidth=2) +
+    facet_wrap(~cluster) +
+    scale_colour_discrete() +
+    #scale_fill_discrete(guide="none") +
+    scale_y_continuous(trans="log",breaks = c(.1,1,10)) +
+    coord_cartesian(ylim=c(.05,20)) +
+    labs(title=paste0("Clusters"),x="Day",y="Relative viral load by ARA") + 
+    theme(axis.text.x = element_text(angle=45,hjust=1))
+  
+  
+  
+  ggsave(paste0('../plots/series_period_', peri, '.png'))
+  
+  g_clust = tt_cluster%>% filter(strong_clust==T)%>% 
+    ggplot() +
+    geom_hline(yintercept=1,linetype=2,alpha=.5) +
+    #geom_ribbon(aes(x=date,ymin=exp(`0.025quant`),ymax=exp(`0.975quant`),fill=NUTS2_name),alpha=.5) +
+    geom_line(aes(x=date,y=exp(norm_mean), color=NUTS2_name, group=ara_name), alpha=0.5) +
+    geom_line( data = tt_cluster%>%filter(ara_name %in% cent_aras), aes(x=date,y=exp(norm_mean), group=ara_name), color='limegreen', linetype=2, linewidth=2) +
+    facet_wrap(~cluster) +
+    scale_colour_discrete() +
+    #scale_fill_discrete(guide="none") +
+    scale_y_continuous(trans="log",breaks = c(.1,1,10)) +
+    coord_cartesian(ylim=c(.05,20)) +
+    labs(title=paste0("Clusters"),x="Day",y="Relative viral load by ARA") + 
+    theme(axis.text.x = element_text(angle=45,hjust=1))
+  
+  
+  
+  ggsave(paste0('../plots/series_period_strong_', peri, '.png'))
+  
+  
+  av_dists = data.table(clustout_euclidean[[7]]@clusinfo) 
+  colnames(av_dists) = c('No. in cluster', 'Average distance')
+  av_dists[, cluster := 1:nrow(av_dists)]
+  av_dists[, period := peri]
+  av_dists_all = rbind(av_dists_all, av_dists)
+  
+  tt_cluster[, period:=peri]
+  tt_cluster_all = rbind(tt_cluster_all, tt_cluster)
+  centroid_distances = data.table()
+  for(n in cent_aras){
+    for(m in cent_aras){
+      centroid_distances_pair = data.table(
+        ara_1 = c(n), 
+        ara_2 = c(m), 
+        cluster_1 = clusters[ara==n]$cluster,
+        cluster_2 = clusters[ara==m]$cluster,
+        distance = c(dtwclust::dtw2(tt_list[n], tt_list[m]))$distance, 
+        period = c(peri))
+      centroid_distances = rbind(centroid_distances, centroid_distances_pair)
+      
+    }
+    centroid_distances_all = rbind(centroid_distances_all, centroid_distances)
+  }
+}
+
+tt_cluster_all
+av_dists_all %>% ggplot() + 
+  ggbeeswarm::geom_beeswarm(aes(x =period, y=`Average distance`, color=period))
+
+centroid_distances_all[!(ara_1 == ara_2)] %>% ggplot() + 
+  geom_point(aes(x = rank(distance), y=`distance`, color=as.character(period)))
+
+
+centroid_distances_all_av = merge(centroid_distances_all, av_dists_all[,c('Average distance', 'cluster', 'period')], by.x = c('cluster_1', 'period'), by.y = c('cluster', 'period'))
+
+
+centroid_distances_all_av[, rat_av_cen_dist := distance/`Average distance`]
+
+
+centroid_distances_all_av[!(ara_1 == ara_2)] %>% ggplot() + 
+  geom_point(aes(x = rank(rat_av_cen_dist), y=rat_av_cen_dist, color=as.character(period)))
+
+
+centroid_distances_all_av[!(ara_1 == ara_2) & !is.infinite(rat_av_cen_dist)] %>% ggplot() + 
+  geom_violin(aes(x = period, y=rat_av_cen_dist, color=as.character(period))) + 
+  geom_point(aes(x = period, y=rat_av_cen_dist) )
+
+
+write.csv(centroid_distances_all_av, '../outputs/dtw_results/centroid_distances_all_av.csv')
+
+write.csv(av_dists_all, '../outputs/dtw_results/av_dists_all.csv')
+
+write.csv(tt_cluster_all, '../outputs/dtw_results/tt_cluster_all.csv')
+
+
+
+
+tt_cluster_sf_all = merge(shapes$ara_shp, unique(tt_cluster_all[,c('ara_id', 'ara_name', 'cluster', 'strong_clust', 'period')]), by=c('ara_id'))
+map_all= 
+  ggplot() + 
+  geom_sf(data=shapes$canton_shp, fill=NA, color='darkgray', linewidth=0.5, alpha=0.5) +
+  geom_sf(data=tt_cluster_sf_all, aes(fill = as.character(cluster)), color=NA, alpha=0.8) + 
+  facet_wrap(~period, nrow=1) + 
+  geom_sf(data=shapes$see_shp, fill='midnightblue', color=NA)+ 
+  theme_minimal() + 
+  scale_fill_discrete(name='Cluster')
+
+ggsave(paste0('../plots/map_all.png'))
+
+map_all_strong= 
+  ggplot() + 
+  geom_sf(data=shapes$canton_shp, fill=NA, color='darkgray', linewidth=0.5, alpha=0.5) +
+  geom_sf(data=tt_cluster_sf_all %>% filter(strong_clust==T), aes(fill = as.character(cluster)), color=NA, alpha=0.8) + 
+  geom_sf(data=tt_cluster_sf_all %>% filter(strong_clust==F), aes(fill = as.character(cluster)), color=NA, alpha=0.2) + 
+  facet_wrap(~period, nrow=1) + 
+  geom_sf(data=shapes$see_shp, fill='midnightblue', color=NA)+ 
+  theme_minimal() + 
+  scale_fill_discrete(name='Cluster')
+
+
+ggsave(paste0('../plots/map_all_strong.png'))
+
+
+pal <- RColorBrewer::brewer.pal(8, name ="Set3")
+
+for(peri in 1:4) {
+  centroid_graph = igraph::graph_from_data_frame(unique(centroid_distances_all[period==peri & distance > 0,c('cluster_1', 'cluster_2', 'distance')]), directed = F)
+  igraph::edge.attributes(centroid_graph)$weight <- log(1.0/(unique(centroid_distances_all[period==peri & distance > 0,c('cluster_1', 'cluster_2', 'distance')])$distance))
+  igraph::E(centroid_graph)$weight
+  plot(centroid_graph, 
+       edge.arrow.size= 0, 
+       edge.curved = TRUE, 
+       edge.width = igraph::E(centroid_graph)$weight * 10,
+       vertex.color=pal[ as.numeric(igraph::V(centroid_graph)$name)],
+       main=paste0('period ' ,peri))
+}
+
+image(as.matrix(dcast(unique(centroid_distances_all[period==peri, c('cluster_1', 'cluster_2', 'distance')]), formula=cluster_1~cluster_2, value.var = 'distance')))
+
+
+unique_distances = unique(centroid_distances_all[!(cluster_1 == cluster_2), c('cluster_1', 'cluster_2', 'distance', 'period')]) 
+
+
+unique_distances[cluster_2 > cluster_1, distance:=NA]
+
+cluster_distance_mat = unique_distances[!is.na(distance)] %>% ggplot() + 
+  geom_tile(aes(x=cluster_1, y=cluster_2, fill=distance), )+
+  geom_text(aes(x=cluster_1, y=cluster_2,label = round(distance,3)), color = "white", size = 4) +
+  scale_fill_viridis_c(trans='reverse')+
+  facet_wrap(~period, nrow=1) + 
+  theme_minimal()
+
+
+map_all/cluster_distance_mat + plot_layout(heights=c(5,2))
+
+ggsave(paste0('../plots/map_all_distances.png'), width=20, height=10)
+
+
+
+
+
+
+g_clust = tt_cluster_all %>% filter(period==1) %>% 
+  ggplot() +
+  geom_hline(yintercept=1,linetype=2,alpha=.5) +
+  #geom_ribbon(aes(x=date,ymin=exp(`0.025quant`),ymax=exp(`0.975quant`),fill=NUTS2_name),alpha=.5) +
+  geom_line(aes(x=date,y=exp(norm_mean), color=NUTS2_name, group=ara_name), alpha=0.5) +
+  #geom_line( data = tt_cluster_all %>% filter(period==1 & ara_name %in% cent_aras), aes(x=date,y=exp(norm_mean), group=ara_name), color='limegreen', linetype=2, linewidth=2) +
+  facet_wrap(~cluster) +
+  scale_colour_discrete() +
+  #scale_fill_discrete(guide="none") +
+  scale_y_continuous(trans="log",breaks = c(.1,1,10)) +
+  coord_cartesian(ylim=c(.05,20)) +
+  labs(title=paste0("Clusters"),x="Day",y="Relative viral load by ARA") + 
+  theme(axis.text.x = element_text(angle=45,hjust=1))
