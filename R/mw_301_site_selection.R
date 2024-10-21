@@ -9,6 +9,9 @@ catchments = shapes$ara_shp
 catchments = sf::st_transform(catchments, 25830)
 catchment_centroids = sf::st_centroid(catchments)
 
+ww_all = readRDS(file = paste0(save.point, 'ww_all.rds'))
+
+
 mtx_dist = sf::st_distance(catchment_centroids, catchment_centroids)
 
 
@@ -609,5 +612,49 @@ ggplot() +
   theme(panel.grid=element_blank(), 
         axis.text = element_blank(), 
         axis.ticks = element_blank())
+
+nuts_regions = data.frame(kt = c("VD","VS","GE","BE","FR","SO","NE","JU","BS","BL","AG","ZH","GL",
+                                 "SH","AR","AI","SG","GR","TG","LU","UR","SZ","OW","NW","ZG","TI"),
+                          NUTS2 = c(rep(c(1:7),c(3,5,3,1,7,6,1))),
+                          NUTS2_name = rep(c("Lake Geneva","Mittelland","Northwest","Zurich","Eastern","Central","Ticino"),c(3,5,3,1,7,6,1)))
+
+nuts_shapes = cbind(shapes$canton_shp, nuts_regions)
+
+
+ggplot() + 
+  geom_sf(data = nuts_shapes, aes(fill=NUTS2_name), alpha=0.5) + 
+  geom_sf(data = shapes$ara_shp, color='grey', fill=NA) + 
+  geom_sf(data = shapes$see_shp, fill='midnightblue') + 
+  scale_fill_discrete(guide='none')+
+  theme_minimal() + 
+  theme(panel.grid=element_blank(), 
+        axis.text = element_blank(), 
+        axis.ticks = element_blank())
+
+
+spa_clust_map_pm =
+  ggplot() +  
+  geom_sf(data = shapes$canton_shp, alpha=0.2) + 
+  geom_sf(data=catchments_spat, aes(fill=as.character(cluster_spat)), alpha=0.5)+
+  geom_sf(data = shapes$see_shp, fill='midnightblue') + 
+  scale_fill_discrete(guide='none')+
+  theme_minimal() + 
+  theme(panel.grid=element_blank(), 
+        axis.text = element_blank(), 
+        axis.ticks = element_blank())
+
+mob_clust_map_pm =
+  ggplot() +
+  geom_sf(data = shapes$canton_shp, alpha=0.2) + 
+  geom_sf(data=catchments_mobil_ig, aes(fill=as.character(mobil_cluster)), alpha=0.5) + 
+  geom_sf(data = shapes$see_shp, fill='midnightblue') + 
+  scale_fill_discrete(guide='none')+
+  theme_minimal() + 
+  theme(panel.grid=element_blank(), 
+        axis.text = element_blank(), 
+        axis.ticks = element_blank())
+
+pranks = lapply(4:9 , function(x){(features %>% arrange(-prank) %>% head(x))$ara_id})
+pranks 
 
 

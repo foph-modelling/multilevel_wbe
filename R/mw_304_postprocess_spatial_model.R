@@ -18,6 +18,7 @@ scores = score_by_catch(nsims = 500,
                         pred_coords_covars = pred_coords_covars, 
                         models = c(1,2,3,4,7),
                         suffix='', 
+                        use_default_lab_effect = T,
                         log_vals=T)
 
 
@@ -42,10 +43,10 @@ catch_summary %>% ggplot() +
 scores_by_model = summarise_scores(scores$scores, by = c("model"))
 scores_by_model_long = melt(scores_by_model, id.vars=c('model'), measure.vars = colnames(scores_by_model[,-c('model')]), value.name = 'score', variable.name='metric')
 
-scores_by_model_long %>% ggplot() + 
+scores_by_model_long[!(model %in% c(4,3)),] %>% ggplot() + 
   geom_point(aes(x=score, y=model, color=as.character(model))) + 
   geom_vline(xintercept = 0) + 
-  scale_y_continuous(transform = 'reverse', breaks=1:6) + 
+  scale_y_continuous(transform = 'reverse', breaks=1:7) + 
   facet_wrap(~metric, nrow=1, scales = 'free') + 
   theme_minimal()
 
