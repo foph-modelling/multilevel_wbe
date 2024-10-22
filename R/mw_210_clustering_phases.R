@@ -1,6 +1,8 @@
 library(patchwork)
 library(tidyverse)
 library(data.table)
+library(ggplot)
+library(sf)
 
 ## select model with daily deviations from GLOBAL trend 
 model = readRDS(paste0("../",controls$savepoint,"ma5.4.4.rds"))
@@ -8,6 +10,10 @@ model = readRDS(paste0("../",controls$savepoint,"ma5.4.4.rds"))
 ## load wastewater data
 ww = readRDS(file=paste0("../",controls$savepoint,"ww_all.rds"))
 corr = readRDS(file=paste0("../",controls$savepoint,"corr_all_ara.rds"))
+
+
+## load shapes
+shapes = readRDS(fs::path("../",controls$savepoint,"shapes.rds"))
 
 ## set number of aras with data 
 nara = length(unique(ww$ara1))
@@ -315,7 +321,7 @@ joint_plot_sc = map_all_strong/cluster_distance_mat + plot_layout(heights=c(5,2)
 ggsave(paste0('../plots/map_all_distances_sc.png'), width=20, height=10, plot = joint_plot_sc)
 
 joint_plot_all = map_all/map_all_strong/cluster_distance_mat + plot_layout(heights=c(1,1,1))
-ggsave(paste0('../plots/map_all_distances_all.png'), width=20, height=10, plot = joint_plot_all)
+ggsave(paste0('../plots/map_all_distances_all_n.png'), width=20, height=10, plot = joint_plot_all)
 
 
 
