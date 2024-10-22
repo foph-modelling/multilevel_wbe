@@ -139,9 +139,11 @@ for (peri in 1:5){
   
   
   
-  
+  cent_aras=names(clustout_euclidean[[7]]@centroids)
   
   tt_cluster_sf = merge(shapes$ara_shp, unique(tt_cluster[,c('ara_id', 'ara_name', 'cluster', 'strong_clust')], by=c('ara_id')))
+  
+  
   map= 
     ggplot() + 
     geom_sf(data=tt_cluster_sf, aes(fill = as.character(cluster)))+ 
@@ -151,7 +153,7 @@ for (peri in 1:5){
   
   ggsave(paste0('../plots/map_period_', peri, '.png'))
   
-  cent_aras=names(clustout_euclidean[[7]]@centroids)
+ 
   map= 
     ggplot() + 
     geom_sf(data=tt_cluster_sf %>% filter(strong_clust==T), aes(fill = as.character(cluster))) + 
@@ -265,7 +267,8 @@ map_all=
   facet_wrap(~period, nrow=1) + 
   geom_sf(data=shapes$see_shp, fill='midnightblue', color=NA)+ 
   theme_minimal() + 
-  scale_fill_discrete(name='Cluster')
+  scale_fill_discrete(name='Cluster') + 
+  ggtitle('A')
 
 ggsave(paste0('../plots/map_all.png'))
 
@@ -278,7 +281,7 @@ map_all_strong=
   geom_sf(data=shapes$see_shp, fill='midnightblue', color=NA)+ 
   theme_minimal() + 
   scale_fill_discrete(name='Cluster') + 
-  ggtitle('A', )
+  ggtitle('B')
 
 
 ggsave(paste0('../plots/map_all_strong.png'))
@@ -311,6 +314,7 @@ cluster_distance_mat = unique_distances[!is.na(distance)] %>% ggplot() +
   geom_text(aes(x=cluster_1, y=cluster_2,label = round(distance,3)), color = "white", size = 4) +
   scale_fill_viridis_c(trans='reverse')+
   facet_wrap(~period, nrow=1) + 
+  ggtitle('C') + 
   theme_minimal()
 
 
