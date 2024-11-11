@@ -1,0 +1,25 @@
+#' ---
+#' title: "WBE for SARS-CoV-2 in Switzerland: Clustering viral load time series"
+#' author: "James Munday"
+#' date: "2024-10-28"
+#' params:
+#'    controls: controls
+#' output:
+#'    html_document:
+#'      code_folding : hide
+#'      number_sections: false
+#'      highlight: pygments
+#'      theme: cosmo
+#'      link-citations: true
+#' ---
+
+
+
+
+#' ## Dendograms of Dynamic Time-Warping distance
+#' 
+#' ![Dend1]('../plots/Dendogram_1')
+#' 
+
+#' 
+#' 
