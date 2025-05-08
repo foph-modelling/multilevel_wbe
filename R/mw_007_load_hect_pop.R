@@ -23,13 +23,13 @@ mw_007_load_hect_pop = function() {
   ## load population data (Total population by hectare (2021) (100mx100m squares))
   swissboundaries_BFS_NATION = st_read('data/spatial/bfs/swissboundaries3d_2023-01_2056_5728.shp/swissBOUNDARIES3D_1_4_TLM_LANDESGEBIET.shp')
   bfs_crs = st_crs(swissboundaries_BFS_NATION)
-  pop_data = fread('data/population_statistics/STATPOP2021.csv')
-  pop_data_slim = pop_data[,c('E_KOORD', 'N_KOORD',  'B21BTOT')]
+  pop_data = fread('data/population_statistics/STATPOP2022.csv')
+  pop_data_slim = pop_data[,c('E_KOORD', 'N_KOORD',  'B22BTOT')]
   
   pop_data_slim_sf = st_as_sf(pop_data_slim, coords = c("E_KOORD", "N_KOORD"), 
                               crs = bfs_crs, remove=FALSE) %>% st_transform(crs = catchment_crs)
   
-  emp_data = data.table::fread('data/employment_statistics/STATENT_2020.csv',fill=TRUE)
+  emp_data = data.table::fread('data/employment_statistics/STATENT_2022.csv',fill=TRUE)
   emp_data_slim = emp_data[,c('N_KOORD', 'E_KOORD', 'B08VZAT')]
   emp_data_slim_sf = st_as_sf(emp_data_slim, coords = c("E_KOORD", "N_KOORD"), 
                               crs = bfs_crs, remove=FALSE)
@@ -65,9 +65,9 @@ mw_007_load_hect_pop = function() {
   # NB the center of the hectare is used for location - this could be changed to include the proportion
   # of the hectare * population but this is quite involved.
   catch_pop_data = st_join(st_transform(pop_data_slim_sf, crs=catchment_crs), intersections, )
-  catch_pop_data_dt = data.table(catch_pop_data)[,c('ara_id', 'ara_name', 'PLZ', 'N_KOORD', 'E_KOORD', 'B21BTOT')]
+  catch_pop_data_dt = data.table(catch_pop_data)[,c('ara_id', 'ara_name', 'PLZ', 'N_KOORD', 'E_KOORD', 'B22BTOT')]
   
-  catch_pop_data_dt[, plz_catch_pop := sum(B21BTOT), by=c('ara_id', 'PLZ')]
+  catch_pop_data_dt[, plz_catch_pop := sum(B22BTOT), by=c('ara_id', 'PLZ')]
   
   plz_catch_pops = unique(catch_pop_data_dt[, c('ara_id', 'ara_name', 'PLZ', 'plz_catch_pop')]) %>% filter(!is.na(plz_catch_pop))
   

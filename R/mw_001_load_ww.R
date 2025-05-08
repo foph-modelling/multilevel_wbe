@@ -15,13 +15,22 @@ mw_001_load_ww = function() {
   ww_url = data_context_json$sources$individual$csv$wasteWater$viralLoad
   
   # load raw data ----
-  raw_ww = data.table::fread(ww_url) %>% 
+  raw_ww = data.table::fread(ww_url,encoding = "UTF-8") %>% 
     dplyr::as_tibble()
   # raw_ww = readRDS(fs::path(paste0(ldate,"_ww_data/COVID19Wastewater_vl.rds")))
   ara_supp = readRDS(fs::path(paste0(ldate,"_ww_data/ara_supp_tbl.rds"))) %>% 
     dplyr::mutate(ara_n=row_number(),
                   lab_n=as.factor(as.numeric(as.factor(lab))))
   ara_methods = readRDS(fs::path(paste0(ldate,"_ww_data/ara_method_change_dates.rds")))
+  # ARAs that changed lab to EAWAG on 1/7/2023
+  ara_change_to_eawag = c("Basel",                 
+                          "Buholz (Real)",       
+                          "Lausanne (Vidy)",       
+                          "Neuchatel",             
+                          "Porrentruy (Sepe)",     
+                          "Region Bern",           
+                          "Schwyz",                
+                          "Zuchwil (Soloth.-Emme)")
   # periods
   cut_dates = lubridate::ymd(c(min(raw_ww$date)-1,controls$period_dates),max(raw_ww$date)+1)
   # NUTS
@@ -30,7 +39,7 @@ mw_001_load_ww = function() {
                             NUTS2 = c(rep(c(1:7),c(3,5,3,1,7,6,1))),
                             NUTS2_name = rep(c("Lake Geneva","Mittelland","Northwest","Zurich","Eastern","Central","Ticino"),c(3,5,3,1,7,6,1)))
   # national and cantonal holidays
-  mw_006_load_ph() # download updated list of national and cantonal holidays from date.nager.at
+  if(FALSE) mw_006_load_ph() # download updated list of national and cantonal holidays from date.nager.at
   hol = readRDS(file = "data/public_holidays/holCH.rds")
   hol_CH = hol %>% 
     dplyr::filter(country=="CH") %>% 
@@ -65,6 +74,9 @@ mw_001_load_ww = function() {
     dplyr::relocate(ara_n) %>% 
     # add indicator for methods change
     dplyr::left_join(ara_methods, by = join_by(ara_id, ara_name)) %>% 
+    # change lab to EAWAG on 1st july 2023 for 8 WWTPs
+    dplyr::mutate(lab=ifelse(ara_name %in% ara_change_to_eawag & date > "2023-07-01","EAWAG",lab)) %>% 
+    dplyr::mutate(lab_n=ifelse(ara_name %in% ara_change_to_eawag & date > "2023-07-01",2,lab_n)) %>% 
     dplyr::group_by(ara_id,kt,lab) %>% 
     dplyr::mutate(method=if_else(date<method_date_change,0,1),
                   method=if_else(is.na(method),0,method)) %>%  # within an ARA, 1 indicates a new method compared to baseline (only 1 method change observed)

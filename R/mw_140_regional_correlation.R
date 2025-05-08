@@ -5,17 +5,17 @@
 # init date: 2024-06-20
 #:::::::::::::::::::::::::::::
 
-mw_140_regional_correlation = function(dat,mod,corr,type="hospitalizations") {
+mw_140_regional_correlation = function(dat,mod,corr,type="hospitalizations",pprint=FALSE) {
   
 
 # Extract surveillance data -----------------------------------------------
 
-  oblig = suppressMessages(readr::read_csv("data/foph_oblig/data.csv")) 
+  oblig = suppressMessages(readr::read_csv("../data/foph_oblig/data.csv")) 
   
   report = oblig %>% 
     dplyr::filter(!is.na(value)) %>% 
     dplyr::filter(valueCategory==type,georegion_type=="canton",agegroup=="all",sex=="all",testResult=="positive") %>% 
-    dplyr::mutate(date=ISOweek::ISOweek2date(paste0(temporal,"-1"))) %>% 
+    dplyr::mutate(date=ISOweek::ISOweek2date(paste0(temporal,"-4"))) %>% 
     dplyr::left_join(dplyr::select(corr,georegion=kt,NUTS2_name) %>%  distinct(),by = join_by(georegion)) %>% 
     dplyr::group_by(NUTS2_name,date) %>% 
     dplyr::summarise(count=sum(value),pop=sum(pop),.groups="drop") %>%
@@ -69,18 +69,23 @@ mw_140_regional_correlation = function(dat,mod,corr,type="hospitalizations") {
   allcor = tt %>% 
     filter(!is.na(inc)) %>% 
     group_by(NUTS2_name,period) %>% 
-    summarise(cor=cor(inc,mean,method="pearson"),.groups="drop")
+    summarise(cor=cor(inc,mean,method="pearson"),.groups="drop") %>% 
+    mutate(colcor=ifelse(cor>.7,"white","black"))
   
   g = allcor %>% 
     ggplot() +
     geom_tile(aes(x=period,y=NUTS2_name,fill=cor)) +
-    geom_text(aes(x=period,y=NUTS2_name,label=sprintf("%.2f",cor)),size=3.4) +
+    geom_text(aes(x=period,y=NUTS2_name,label=sprintf("%.2f",cor),colour=colcor),size=3.4) +
     scale_fill_distiller(palette = "Greys",direction = 1,limits=c(0,1)) +
     scale_y_discrete(expand=c(0,0),limits=rev) +
     scale_x_discrete(expand=c(0,0)) +
-    labs(x="Period",y="Region",fill="Correlation") +
+    scale_colour_manual(values=c("black","white"),guide="none") +
+    labs(x="Phase",y="Region",fill="Correlation    ") +
     theme(legend.position="bottom")
   
+  if(pprint) {
+    g=allcor
+  }
   if(FALSE) {
     tt %>% 
       filter(!is.na(inc)) %>% 

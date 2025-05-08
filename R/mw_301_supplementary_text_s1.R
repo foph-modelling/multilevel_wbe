@@ -1,32 +1,56 @@
 #' ---
-#' title: "WBE for SARS-CoV-2 in Switzerland: data description "
+#' title: "S1 text"
 #' author: "Julien Riou"
 #' date: "`r Sys.Date()`"
-#' params:
-#'    controls: controls
-#' output:
-#'    html_document:
-#'      code_folding : hide
-#'      number_sections: false
-#'      highlight: pygments
-#'      theme: cosmo
-#'      link-citations: true
 #' ---
 
 
-#+ results="hide", warnings="false", echo="false"
-source("setup.R")
-ww1 = readRDS(fs::path("../",controls$savepoint,"ww1.rds"))
+
+# Select ------------------------------------------------------------------
+controls = readRDS(file.path("savepoints/savepoint_2025-01-24/controls.rds"))
+source("R/setup.R")
+setwd("R")
 shapes = readRDS(fs::path("../",controls$savepoint,"shapes.rds"))
+ww_all = readRDS(file=paste0("../",controls$savepoint,"ww_all.rds"))
+savepath = "C:/Users/ju6558/Documents/en_cours/2024_wbe/667142f8f7eb62e0d8010282"
+ma5.4.5 = readRDS(fs::path("../",controls$savepoint,"ma5.4.5.rds"))
+corr_all_ara = readRDS(file=paste0("../",controls$savepoint,"corr_all_ara.rds"))
 
 
-#' # Data
+# Relabelling -------------------------------------------------------------
 
-ww_all %>% 
-  filter(below_lod==0,below_lod==0) %>% 
-  group_by(wwtp_index) %>% 
-  summarise(vl=mean(vl)) %>% 
-  summarise(min=min(vl),max=max(vl),ratio=max(vl)/min(vl))
+# WWTP number from 1 to 118 sorted by canton
+wwtpnumber = ww_all %>% 
+  dplyr::filter(below_lod==0,below_loq==0) %>% 
+  dplyr::group_by(kt,ara_kt,week) %>% 
+  dplyr::summarise(mvl=median(vl,na.rm=TRUE),.groups="drop") %>% 
+  dplyr::mutate(wwtp_index=as.numeric(as.factor(ara_kt))) %>% 
+  dplyr::select(ara_kt,wwtp_index) %>% 
+  dplyr::distinct() 
+wwtpnutsnumber = ww_all %>% 
+  dplyr::filter(below_lod==0,below_loq==0) %>% 
+  dplyr::mutate(ara_nuts=paste0(NUTS2_name," / ",ara_name)) %>% 
+  dplyr::group_by(NUTS2_name,kt,ara_nuts,week) %>% 
+  dplyr::summarise(mvl=median(vl,na.rm=TRUE),.groups="drop") %>% 
+  dplyr::mutate(wwtp_nuts_index=as.numeric(as.factor(ara_nuts))) %>% 
+  dplyr::select(ara_nuts,wwtp_nuts_index) %>% 
+  dplyr::distinct() 
+
+
+# lab numbers as letters with EAWAG first
+labo_names = tibble(lab_method=c("EAWAG_0","ALTGR_0","Eurofins_0","Eurofins_1","KLZH_0","LdU_0","Microsynth_0","Microsynth_1","SCAV_NE_0","SUPSI_0"),
+                    labo_label=c("A (ref.)","B","C1","C2","D","E","F","G1","G2","H"))
+labo_cov = tibble(Variable=c("lab_methodALTGR_0","lab_methodEurofins_0","lab_methodEurofins_1","lab_methodKLZH_0",      
+                             "lab_methodLdU_0","lab_methodMicrosynth_0" ,"lab_methodMicrosynth_1", "lab_methodSCAV_NE_0",   
+                             "lab_methodSUPSI_0","weekend","hol","prop_under_20b",        
+                             "prop_over_65b","ssep3_medb","employment_factorb"),
+                  labo_label=c("B","C1","C2","D","E","F","G1","G2","H",
+                               "Week-end","Public holiday","Proportion aged <20","Proportion aged >65","Median Swiss-SEP","Employment factor"))
+ww_all = ww_all %>% 
+  left_join(wwtpnumber,by="ara_kt") %>% 
+  left_join(labo_names,by="lab_method") %>%   
+  dplyr::mutate(ara_nuts=paste0(NUTS2_name," / ",ara_name)) %>% 
+  left_join(wwtpnutsnumber,by="ara_nuts")
 
 #' # Supplementary methods
 
@@ -34,9 +58,47 @@ ww_all %>%
 
 # model fit
 
-#' # Supplementary results
+#' 
+#' # Correlation with hospitalisations
+#' 
 
-mw_141_crude_correlation(ww_all,corr_all_ara)
+g1 = mw_141_crude_correlation(ww_all,corr_all_ara,pprint=FALSE)
+g2 = mw_140_regional_correlation(ww_all,ma5.4.5,corr_all_ara,type="hospitalizations",pprint=FALSE) 
+
+cowplot::plot_grid(g1,g2,align = "hv",labels = LETTERS)
+ggsave(file="../supplementary/correlation_hospitalisation.png",width = 8, height=4)
+
+corr1 = mw_141_crude_correlation(ww_all,corr_all_ara,pprint=TRUE)
+corr2 = mw_140_regional_correlation(ww_all,ma5.4.5,corr_all_ara,type="hospitalizations",pprint=TRUE) 
+
+corr = corr1 %>% 
+  rename(cor1=cor) %>% 
+  left_join(corr2,by = join_by(NUTS2_name, period)) %>% 
+  rename(cor2=cor) %>% 
+  ungroup()
+
+corr %>% 
+  mutate(inc=cor2>cor1) %>% 
+  summarise(increase=mean(inc))
+
+corr %>% 
+  summarise(cor1=median(cor1),cor2=median(cor2))
+
+corr %>% 
+  group_by(period) %>% 
+  summarise(cor1=median(cor1),cor2=median(cor2))
+
+
+ww_all %>%
+  group_by(period,lab_method) %>% 
+  count() %>% view()
+
+
+mw_142_regional_correlation_lag(dat=ww_all,
+                                       mod=ma5.4.5,
+                                       corr=corr_all_ara,
+                                       type="hospitalizations") 
+ggsave(file="../supplementary/correlation_lag.png",width = 8, height=4)
 
 # coeff of determination
 

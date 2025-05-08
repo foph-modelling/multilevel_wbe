@@ -5,17 +5,17 @@
 # init date: 2024-06-20
 #:::::::::::::::::::::::::::::
 
-mw_141_crude_correlation = function(dat,corr,type="hospitalizations") {
+mw_141_crude_correlation = function(dat,corr,type="hospitalizations",pprint=FALSE) {
   
 
 # Extract surveillance data -----------------------------------------------
 
-  oblig = suppressMessages(readr::read_csv("data/foph_oblig/data.csv")) 
+  oblig = suppressMessages(readr::read_csv("../data/foph_oblig/data.csv")) 
   
   report = oblig %>% 
     dplyr::filter(!is.na(value)) %>% 
     dplyr::filter(valueCategory==type,georegion_type=="canton",agegroup=="all",sex=="all",testResult=="positive") %>% 
-    dplyr::mutate(date=ISOweek::ISOweek2date(paste0(temporal,"-1"))) %>% 
+    dplyr::mutate(date=ISOweek::ISOweek2date(paste0(temporal,"-4"))) %>% 
     dplyr::left_join(dplyr::select(corr,georegion=kt,NUTS2_name) %>%  distinct(),by = join_by(georegion)) %>% 
     dplyr::group_by(NUTS2_name,date) %>% 
     dplyr::summarise(count=sum(value),pop=sum(pop),.groups="drop") %>%
@@ -42,12 +42,14 @@ mw_141_crude_correlation = function(dat,corr,type="hospitalizations") {
     ggplot() +
     geom_tile(aes(x=period,y=NUTS2_name,fill=cor)) +
     geom_text(aes(x=period,y=NUTS2_name,label=sprintf("%.2f",cor)),size=3.4) +
-    scale_fill_distiller(palette = "Greys",direction = 1.,limits=c(0,1)) +
+    scale_fill_distiller(palette = "Greys",direction = 1.,limits=c(-.07,1)) +
     scale_y_discrete(expand=c(0,0),limits=rev) +
     scale_x_discrete(expand=c(0,0)) +
-    labs(x="Period",y="Region",fill="Correlation") +
+    labs(x="Phase",y="Region",fill="Correlation") +
     theme(legend.position="bottom")
-  
+  if(pprint) {
+    g=allcor
+  }
   if(FALSE) {
     tt %>% 
       filter(!is.na(inc)) %>% 

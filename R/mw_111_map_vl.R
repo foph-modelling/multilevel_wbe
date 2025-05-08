@@ -8,6 +8,7 @@
 mw_111_map_vl = function(ww,shp) {
   # gather info
   tt = ww %>% 
+    dplyr::mutate(wwtp_index=as.numeric(as.factor(ara_kt))) %>% 
     dplyr::filter(below_lod==0,below_loq==0) %>% 
     dplyr::group_by(ara_id,period,week) %>% 
     dplyr::summarise(vl=mean(vl,na.rm=TRUE),.groups="drop") %>% 

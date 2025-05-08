@@ -22,6 +22,7 @@ pacman::p_load(Hmisc,
                jsonlite,
                scales, 
                units,
+               flextable,
                ggnewscale)
 
 # set language ----

@@ -6,6 +6,8 @@
 
 
 # Select ------------------------------------------------------------------
+controls = readRDS(file.path("savepoints/savepoint_2025-01-24/controls.rds"))
+source("R/setup.R")
 setwd("R")
 shapes = readRDS(fs::path("../",controls$savepoint,"shapes.rds"))
 ww_all = readRDS(file=paste0("../",controls$savepoint,"ww_all.rds"))
@@ -24,19 +26,31 @@ wwtpnumber = ww_all %>%
   dplyr::mutate(wwtp_index=as.numeric(as.factor(ara_kt))) %>% 
   dplyr::select(ara_kt,wwtp_index) %>% 
   dplyr::distinct() 
+wwtpnutsnumber = ww_all %>% 
+  dplyr::filter(below_lod==0,below_loq==0) %>% 
+  dplyr::mutate(ara_nuts=paste0(NUTS2_name," / ",ara_name)) %>% 
+  dplyr::group_by(NUTS2_name,kt,ara_nuts,week) %>% 
+  dplyr::summarise(mvl=median(vl,na.rm=TRUE),.groups="drop") %>% 
+  dplyr::mutate(wwtp_nuts_index=as.numeric(as.factor(ara_nuts))) %>% 
+  dplyr::select(ara_nuts,wwtp_nuts_index) %>% 
+  dplyr::distinct() 
+
 
 # lab numbers as letters with EAWAG first
-labo_names = tibble(lab_method=c("EAWAG_0","ALTGR_0","Eurofins_0","Eurofins_1","KLZH_0","LdU_0","Microsynth_0","Microsynth_1","SCAV_NE_0","SUPSI_0"),
+labo_names = tibble(lab_method=c("EAWAG_0","ALTGR_0","Eurofins_0","Eurofins_1","KLZH_0","LdU_0","SCAV_NE_0","Microsynth_0","Microsynth_1","SUPSI_0"),
                  labo_label=c("A (ref.)","B","C1","C2","D","E","F","G1","G2","H"))
 labo_cov = tibble(Variable=c("lab_methodALTGR_0","lab_methodEurofins_0","lab_methodEurofins_1","lab_methodKLZH_0",      
-                            "lab_methodLdU_0","lab_methodMicrosynth_0" ,"lab_methodMicrosynth_1", "lab_methodSCAV_NE_0",   
+                            "lab_methodLdU_0","lab_methodSCAV_NE_0","lab_methodMicrosynth_0" ,"lab_methodMicrosynth_1",  
                             "lab_methodSUPSI_0","weekend","hol","prop_under_20b",        
                             "prop_over_65b","ssep3_medb","employment_factorb"),
                   labo_label=c("B","C1","C2","D","E","F","G1","G2","H",
                        "Week-end","Public holiday","Proportion aged <20","Proportion aged >65","Median Swiss-SEP","Employment factor"))
 ww_all = ww_all %>% 
   left_join(wwtpnumber,by="ara_kt") %>% 
-  left_join(labo_names,by="lab_method")
+  left_join(labo_names,by="lab_method") %>%   
+  dplyr::mutate(ara_nuts=paste0(NUTS2_name," / ",ara_name)) %>% 
+  left_join(wwtpnutsnumber,by="ara_nuts")
+
 
 # Description -------------------------------------------------------------
 
@@ -58,7 +72,17 @@ ww_all %>%
   filter(below_lod==0,below_loq==0) %>% 
   summarise(n=n(),
             min=formatC(min(vl),format="e",digits=1),
-            max=formatC(max(vl),format="e",digits=1))
+            max=formatC(max(vl),format="e",digits=1),
+            sd=var(vl))
+7.4e+14 /  1.7e+10
+
+x = ww_all %>% 
+  group_by(wwtp_index) %>% 
+  summarise(m=mean(vl)) %>% 
+  summarise(min=min(m),
+            max=max(m))
+x$max/x$min
+
 
 ww_all$kt %>% unique() %>% length()
 
@@ -75,6 +99,7 @@ ww_all %>%
 
 # Modèle ------------------------------------------------------------------
 
+source("inla.rsquared.R")
 inla.rsquared(ww_all,ma5.4.5)
 summary(ma5.4.5)
 
@@ -82,11 +107,11 @@ summary(ma5.4.5)
 
 g1 = mw_110_map_missing(ww_all,shapes)
 g2 = mw_106_fig_vl_time(ww_all)
-g3 = mw_104_fig_vl(ww_all)
+g3 = mw_104_fig_vl_nuts(ww_all)
 
 leftp = cowplot::plot_grid(g1,g2,labels=c("A","B"),ncol=1,rel_heights = c(1.5,1))
 f1 = cowplot::plot_grid(leftp,g3,labels=c("","C"))
-ggsave(plot=f1, file.path(savepath,"fig1.pdf"),width=9,height=6.3)
+ggsave(plot=f1, file=fs::path("../",controls$savepoint,"fig1.pdf"),width=9,height=6.3)
 
 # Figure 2 ------------------------------------------------------------------------------
 
@@ -96,7 +121,7 @@ g2 = plot_exp_vl(ma5.4.5,pars="hol|weekend",labs=labo_cov,col="dodgerblue") + co
 g3 = plot_exp_vl(ma5.4.5,pars="pop_total|prop_under_20|prop_over_65|prop_non_ch_eu|ssep3_|emp",labs=labo_cov,col="seagreen")   + coord_cartesian(ylim=c(.7,1.3))
 
 f2 = cowplot::plot_grid(g1,g3,g2,labels=c("A","B","C"),align="hv",ncol=3,rel_widths = c(2,2,1.2))
-ggsave(plot=f2, file.path(savepath,"fig2.pdf"),width=9,height=3.5)
+ggsave(plot=f2, file=fs::path("../",controls$savepoint,"fig2.pdf"),width=9,height=3.5)
 
 
 ppp_vl_ara(ww_all,ma5.4.5)
@@ -119,8 +144,8 @@ mw_131_map_deviation_from_average(ma5.4.5,corr_all_ara,ww_all,shapes,12)
 region_labs = tibble(nam=c("Northwest","Northwest","Central","Zurich","Eastern","Mittelland"),
                      x=c("2022-05-25","2022-05-25","2022-07-10","2023-04-01","2023-09-20","2023-09-10"),
                      y=c(9,9,.14,5.5,8,5),
-                     xend=c("2022-03-14","2022-07-17","2022-05-24","2023-03-22","2023-11-03","2023-11-03"),
-                     yend=c(12,9,.12,3.6,6.5,4.7))
+                     xend=c("2022-03-14","2022-07-17","2022-05-24","2023-03-22","2023-11-12","2023-11-08"),
+                     yend=c(12,9,.13,3.5,5.5,2.9))
 
 g1 = avg_time_trend_reg(ww_all,ma5.4.5) +
   geom_segment(data=region_labs,aes(x=as.Date(x),y=y,xend=as.Date(xend),yend=yend),linewidth=.2) +
@@ -132,4 +157,13 @@ g3 = mw_130_map_relative_vl(ma5.4.5,corr_all_ara,shapes)
 
 botpn = cowplot::plot_grid(g2,g3,labels=c("B","C"),align="v",ncol=2,rel_widths = c(1,1.6))
 f3 = cowplot::plot_grid(g1,botpn,ncol=1,labels=c("A",""),rel_heights = c(1,1.6))
-ggsave(plot=f3, file.path(savepath,"fig3.pdf"),width=9,height=7.3)
+ggsave(plot=f3, file=fs::path("../",controls$savepoint,"fig3.pdf"),width=9,height=7.3)
+
+
+mw_130_map_relative_vl(ma5.4.5,corr_all_ara,shapes,pprint=TRUE)
+
+supf = mw_142_regional_correlation_lag(dat=ww_all,
+                                mod=ma5.4.5,
+                                corr=corr_all_ara,
+                                type="hospitalizations") 
+mw_143_regional_hospits(ww_all)

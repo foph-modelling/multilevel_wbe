@@ -33,10 +33,10 @@ mw_110_map_missing = function(ww,shp,identify_eawag=FALSE) {
   #               y=46)
   
   g = ggplot() +
-    geom_sf(data=shape_nuts,fill="white",colour=NA) +
+    geom_sf(data=shp$canton_shp,fill="white",colour="black") +
     geom_sf(data=tt,aes(fill=n_bin),colour=NA) +
-    geom_sf(data=shape_nuts,fill=NA,aes(colour=NUTS2_name),linewidth=.8) +
-    geom_sf(data=filter(shape_nuts,NUTS2_name=="Central"),fill=NA,aes(colour=NUTS2_name),linewidth=.8) +
+    geom_sf(data=tt,fill=NA,aes(colour=NUTS2_name),linewidth=.8) +
+    geom_sf(data=filter(tt,NUTS2_name=="Central"),fill=NA,aes(colour=NUTS2_name),linewidth=.8) +
     # scale_fill_distiller(palette="Greys",direction=1,breaks=c(200,400,600)) +
     scale_fill_manual(values=c("grey80","grey50","grey10"),guide="none") +
     labs(colour=NULL,fill="Measurements")   +

@@ -5,7 +5,7 @@
 # init date: 2023-06-14
 #:::::::::::::::::::::::::::::
 
-mw_130_map_relative_vl = function(model,corr,shp,forestplot=FALSE, top=NULL) {
+mw_130_map_relative_vl = function(model,corr,shp,forestplot=FALSE, top=NULL,pprint=FALSE) {
   # model = ma5.3.1
   # corr = corr_all_ara
   # shp = shapes
@@ -38,7 +38,7 @@ mw_130_map_relative_vl = function(model,corr,shp,forestplot=FALSE, top=NULL) {
     tt = dplyr::bind_rows(head(tt,top),tail(tt,top))
   }
   
-  # print(dplyr::bind_rows(head(tt,1),tail(tt,1)))
+  if(pprint) print(dplyr::bind_rows(head(tt,1),tail(tt,1)))
   # merge with map
   mm = shp$ara_shp %>% 
     dplyr::left_join(tt, by = join_by(ara_id)) %>% 
