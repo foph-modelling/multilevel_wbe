@@ -1,9 +1,3 @@
-pacman::p_load(patchwork,tidyverse,data.table,paletteer,magick,dtwclust)
-
-setwd('R')
-
-analysis_date = "2025-01-24"
-controls = readRDS(paste0("../savepoints/savepoint_",analysis_date,"/controls.rds"))
 
 source('setup.R')
 
@@ -92,7 +86,11 @@ for (peri in 1:5){
                                          k=2:10, 
                                          return.objects=TRUE)
   
+<<<<<<< HEAD
   saveRDS(clustout_euclidean,paste0("../",controls$savepoint,"/dtw_outputs/cluster_", peri, '.rds'))
+=======
+  saveRDS(clustout_euclidean, paste0('../outputs/cluster_', peri, '.rds'))
+>>>>>>> 363ac959dd96ba4efe9f05b2834a1646f4f35333
   
   ## evaluate partitions using CVI metrics - output as plot
   names(clustout_euclidean) <- paste0(2:10)
@@ -111,6 +109,7 @@ for (peri in 1:5){
   
   for(n in 1:9){
     ## output the dtw distances betweeen deviations to estimate cluster strengths
+<<<<<<< HEAD
     distmat = data.table::data.table(clustout_euclidean[[n]]@distmat)
     aras = rownames(clustout_euclidean[[n]]@distmat)
     distmat[, ara_1 := aras]
@@ -119,6 +118,16 @@ for (peri in 1:5){
     clusters = data.table::data.table(ara = aras, cluster = clustout_euclidean[[n]]@cluster)
     
     distances_clust = merge(distances, clusters, by.x = 'ara_1', by.y = 'ara',by=.EACHI)
+=======
+    distmat = data.table(clustout_euclidean[[n]]@distmat)
+    aras = rownames(clustout_euclidean[[n]]@distmat)
+    distmat[, ara_1 := aras]
+    distances = melt(distmat, id.vars = 'ara_1', variable.name = 'ara_2', value.name = 'Dist')
+    
+    clusters = data.table(ara = aras, cluster = clustout_euclidean[[n]]@cluster)
+    
+    distances_clust = merge(distances, clusters, by.x = 'ara_1', by.y = 'ara')
+>>>>>>> 363ac959dd96ba4efe9f05b2834a1646f4f35333
     distances_clust = distances_clust[, cluster_1 := cluster][,-'cluster']
     distances_clust = merge(distances_clust, clusters, by.x = 'ara_2', by.y = 'ara')
     distances_clust = distances_clust[, cluster_2 := cluster][,-'cluster']
@@ -150,7 +159,11 @@ for (peri in 1:5){
     
     
     
+<<<<<<< HEAD
     ggsave(paste0("../",controls$savepoint,'/dtw_plots/map_period_', peri, '_clust_',n, '.png'))
+=======
+    ggsave(paste0('../plots/map_period_', peri, '_clust_',n, '.png'))
+>>>>>>> 363ac959dd96ba4efe9f05b2834a1646f4f35333
     
     
     map= 
@@ -160,7 +173,11 @@ for (peri in 1:5){
       geom_sf(data=tt_cluster_sf %>% filter(ara_name %in% cent_aras), color='limegreen', linewidth=1, fill=NA)# + facet_wrap(~period)
     
     
+<<<<<<< HEAD
     ggsave(paste0("../",controls$savepoint,'/dtw_plots/map_period_strong_', peri, '_clust_',n, '.png'))
+=======
+    ggsave(paste0('../plots/map_period_strong_', peri, '_clust_',n, '.png'))
+>>>>>>> 363ac959dd96ba4efe9f05b2834a1646f4f35333
     
     tt_cluster[, norm_mean := dtwclust::zscore(mean), by=c('ara_id')]
     
@@ -182,7 +199,11 @@ for (peri in 1:5){
     
     
     
+<<<<<<< HEAD
     ggsave(paste0("../",controls$savepoint,'/dtw_plots/series_period_', peri, '_clust_',n, '.png'))
+=======
+    ggsave(paste0('../plots/series_period_', peri, '_clust_',n, '.png'))
+>>>>>>> 363ac959dd96ba4efe9f05b2834a1646f4f35333
     
     g_clust = tt_cluster%>% filter(strong_clust==T)%>% 
       ggplot() +
@@ -200,7 +221,11 @@ for (peri in 1:5){
     
     
     
+<<<<<<< HEAD
     ggsave(paste0("../",controls$savepoint,'/dtw_plots/series_period_strong_', peri, '_clust_',n, '.png'))
+=======
+    ggsave(paste0('../plots/series_period_strong_', peri, '_clust_',n, '.png'))
+>>>>>>> 363ac959dd96ba4efe9f05b2834a1646f4f35333
     
     
     av_dists = data.table(clustout_euclidean[[n]]@clusinfo) 
