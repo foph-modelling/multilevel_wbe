@@ -23,7 +23,7 @@ shapes = readRDS(fs::path("../",controls$savepoint,"shapes.rds"))
 #' Viral concentration (*C*, unit: gene copies [gc] per liter) is transformed into viral load (*V*; unit: gc per day per 100,000) 
 #' using the flow of wastewater on the same day (*F*) and the size of the population covered (*P*):
 #' $$
-#'  V = \frac{C \times F}{P/100,000}m
+#'  V = \frac{C \times F}{P/100,000}
 #' $$
 #' Table 1 provides a summary of the available data. 
 #' In total 118 ARAs reported data over the full period.

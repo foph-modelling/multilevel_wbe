@@ -1,3 +1,4 @@
+
 library(patchwork)
 library(tidyverse)
 library(data.table)
@@ -97,6 +98,7 @@ for (peri in 1:5){
                                          distance = 'dtw2',
                                          k=2:10, 
                                          return.objects=TRUE)
+
   names(clustout_euclidean) <- paste0(2:10)
   cvi_out = t(sapply(clustout_euclidean, dtwclust::cvi, type = "internal"))
   cvi_out = data.frame(cvi_out) %>% mutate(n_clusters = as.numeric(names(clustout_euclidean) ))
@@ -229,6 +231,7 @@ for (peri in 1:5){
 
 tt_cluster_all
 av_dists_all %>% ggplot() + 
+
   ggbeeswarm::geom_beeswarm(aes(x =period, y=`Average distance`, color=period))
 
 centroid_distances_all[!(ara_1 == ara_2)] %>% ggplot() + 
@@ -242,11 +245,13 @@ centroid_distances_all_av[, rat_av_cen_dist := distance/`Average distance`]
 
 
 centroid_distances_all_av[!(ara_1 == ara_2)] %>% ggplot() + 
+
   geom_point(aes(x = rank(rat_av_cen_dist), y=rat_av_cen_dist, color=as.character(period)))
 
 
 centroid_distances_all_av[!(ara_1 == ara_2) & !is.infinite(rat_av_cen_dist)] %>% ggplot() + 
   geom_violin(aes(x = period, y=rat_av_cen_dist, color=as.character(period))) + 
+
   geom_point(aes(x = period, y=rat_av_cen_dist) )
 
 
@@ -264,6 +269,7 @@ map_all=
   ggplot() + 
   geom_sf(data=shapes$canton_shp, fill=NA, color='darkgray', linewidth=0.5, alpha=0.5) +
   geom_sf(data=tt_cluster_sf_all, aes(fill = as.character(cluster)), color=NA, alpha=0.8) + 
+
   facet_wrap(~period, nrow=1) + 
   geom_sf(data=shapes$see_shp, fill='midnightblue', color=NA)+ 
   theme_minimal() + 
@@ -276,6 +282,7 @@ map_all_strong=
   ggplot() + 
   geom_sf(data=shapes$canton_shp, fill=NA, color='darkgray', linewidth=0.5, alpha=0.5) +
   geom_sf(data=tt_cluster_sf_all %>% filter(strong_clust==T), aes(fill = as.character(cluster)), color=NA, alpha=0.8) + 
+
   geom_sf(data=tt_cluster_sf_all %>% filter(strong_clust==F), aes(fill = as.character(cluster)), color=NA, alpha=0.2) + 
   facet_wrap(~period, nrow=1) + 
   geom_sf(data=shapes$see_shp, fill='midnightblue', color=NA)+ 
@@ -344,3 +351,4 @@ g_clust = tt_cluster_all %>% filter(period==1 & strong_clust) %>%
   coord_cartesian(ylim=c(.05,20)) +
   labs(title=paste0("Clusters"),x="Day",y="Relative viral load by ARA") + 
   theme(axis.text.x = element_text(angle=45,hjust=1))
+

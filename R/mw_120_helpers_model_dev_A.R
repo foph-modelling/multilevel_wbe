@@ -90,6 +90,13 @@ avg_time_trend = function(dat,mod) {
 
 
 avg_time_trend_reg = function(dat,mod) {
+  plab = tibble(date=c(min(dat$date), controls$period_dates,max(dat$date))) %>% 
+    mutate(date2=lead(date)) %>% 
+    filter(!is.na(date2)) %>% 
+    mutate(dif=(date2-date)/2) %>% 
+    mutate(pos=date+dif) %>% 
+    mutate(lab=as.character(row_number()),
+           y=15)
   lims = dat %>% 
     dplyr::filter(below_lod==0,below_loq==0) %>% 
     dplyr::summarise(minvl=min(vl),maxvl=max(vl))
@@ -118,8 +125,15 @@ avg_time_trend_reg = function(dat,mod) {
     # geom_ribbon(aes(ymin=exp(`0.025quant`),ymax=exp(`0.975quant`),fill=NUTS2_name),alpha=.5) +
     geom_line(aes(y=exp(mean),colour=NUTS2_name)) +
     scale_y_continuous(trans="log",breaks=c(0,.2,.5,1,2,5,10)) +
-    labs(x="Date",y="Relative VL",title="Average time trend by region")
-  return(g)
+    labs(x="Time",y="Fold change in VL",title=NULL, colour="Region") +
+    scale_x_date(expand=c(0,0),
+                 breaks="4 months",
+                 date_labels = "%b %Y") +
+    geom_vline(xintercept=as.Date(controls$period_dates),linetype=2)  +
+    geom_label(data=plab,aes(x=pos,y=y,label=lab),size=3) +
+    scale_colour_discrete(na.translate = FALSE) +
+    theme(legend.position="right")
+    return(g)
 }
 
 # plot posterior predictive plot to viral load data ----
@@ -192,7 +206,8 @@ summary_exp_vl = function(mod, pars, order=FALSE, ref=NULL, clean.out=NULL) {
   return(o)
 }
 
-plot_exp_vl = function(mod, pars, order=FALSE, ref=NULL, clean.out=NULL) {
+plot_exp_vl = function(mod, pars, order=FALSE, ref=NULL, clean.out=NULL,labs=NULL,col=cust_cols[2]) {
+  
   o = mod$summary.fixed %>% 
     rownames_to_column("Variable") %>% 
     as_tibble() %>% 
@@ -201,6 +216,11 @@ plot_exp_vl = function(mod, pars, order=FALSE, ref=NULL, clean.out=NULL) {
                      VL_ratio=format(round(exp(mean),2),scientific=FALSE),
                      lower_bound=format(round(exp(`0.025quant`),2),scientific=FALSE),
                      upper_bound=format(round(exp(`0.975quant`),2),scientific=FALSE))
+  if(!is.null(labs)) {
+    o = o %>% 
+      left_join(labs,by = join_by(Variable)) %>% 
+      mutate(Variable=labo_label)
+  }
   if(order) {
     o = o %>% 
       dplyr::arrange(rev(VL_ratio))
@@ -215,14 +235,14 @@ plot_exp_vl = function(mod, pars, order=FALSE, ref=NULL, clean.out=NULL) {
   }
   g = o %>% 
     dplyr::mutate(VL_ratio=as.numeric(VL_ratio),
-                                   lower_bound=as.numeric(lower_bound),
-                                   upper_bound=as.numeric(upper_bound)) %>% 
+                  lower_bound=as.numeric(lower_bound),
+                  upper_bound=as.numeric(upper_bound)) %>% 
     ggplot() +
     geom_hline(yintercept=1,linetype=2) +
-    geom_pointrange(aes(x=Variable,y=VL_ratio,ymin=lower_bound,ymax=upper_bound),colour=cust_cols[2]) +
-    scale_y_continuous(trans="pseudo_log",breaks=c(0,.5,1,2,3,4,5,10)) +
+    geom_pointrange(aes(x=Variable,y=VL_ratio,ymin=lower_bound,ymax=upper_bound),colour=col) +
+    # scale_y_continuous(breaks=c(0,.5,1.5,1,2,3,4,5,10)) +
     theme(axis.text.x = element_text(angle=45,hjust=1)) +
-    labs(y="Relative VL",x=NULL)
-    
+    labs(y="Fold change in VL",x=NULL)
+  
   return(g)
 }

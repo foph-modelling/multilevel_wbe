@@ -50,6 +50,11 @@ corr_reg = ww_reg %>%
   count() %>% 
   ungroup()
 
+corr_reg_ara = ww_reg %>% 
+  group_by(ara_n,ara_id,ara_name,kt,pop,ara1,ara2) %>% 
+  count() %>% 
+  ungroup()
+
 mw_100_desc_table(ww_reg) %>% 
   dplyr::mutate(across(everything(),as.character)) %>% 
   tidyr::gather() %>% 
@@ -127,7 +132,7 @@ ma5.2$summary.random$ara1 %>%
                    `exp(beta)`=round(exp(mean),2),
                    `0.025quant`=round(exp(`0.025quant`),2),
                    `0.975quant`=format(round(exp(`0.975quant`),2),scientific=FALSE)) %>% 
-  dplyr::left_join(select(corr_reg,ara1,ara_name),by = join_by(ara1)) %>% 
+  dplyr::left_join(select(corr_reg_ara,ara1,ara_name),by = join_by(ara1)) %>% 
   dplyr::arrange(-`exp(beta)`) %>% 
   select(-ara1) %>% 
   column_to_rownames(var="ara_name")
@@ -151,7 +156,8 @@ if(controls$rerun_models) {
                        f(prop_under_20b,model="linear",mean.linear=0,prec.linear=.2) +
                        f(prop_over_65b,model="linear",mean.linear=0,prec.linear=.2) +
                        f(prop_non_ch_eub,model="linear",mean.linear=0,prec.linear=.2) +
-                       f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2),
+                       f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2) +
+                       f(employment_factor,model="linear",mean.linear=0,prec.linear=.2),
                      data = ww_reg,
                      family = "gamma",
                      control.compute = list(waic=TRUE,config=TRUE),
@@ -170,7 +176,7 @@ ma5.3$summary.random$ara1 %>%
                    `exp(beta)`=round(exp(mean),2),
                    `0.025quant`=round(exp(`0.025quant`),2),
                    `0.975quant`=format(round(exp(`0.975quant`),2),scientific=FALSE)) %>% 
-  dplyr::left_join(select(corr_reg,ara1,ara_name),by = join_by(ara1)) %>% 
+  dplyr::left_join(select(corr_reg_ara,ara1,ara_name),by = join_by(ara1)) %>% 
   dplyr::arrange(-`exp(beta)`) %>% 
   select(-ara1) %>% 
   column_to_rownames(var="ara_name")
@@ -199,7 +205,8 @@ if(controls$rerun_models) {
                        f(prop_under_20b,model="linear",mean.linear=0,prec.linear=.2) +
                        f(prop_over_65b,model="linear",mean.linear=0,prec.linear=.2) +
                        f(prop_non_ch_eub,model="linear",mean.linear=0,prec.linear=.2) +
-                       f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2),
+                       f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2) +
+                       f(employment_factor,model="linear",mean.linear=0,prec.linear=.2),
                      data = ww_reg,
                      family = "gamma",
                      control.compute = list(waic=TRUE,config=TRUE),
@@ -218,7 +225,7 @@ ma5.4$summary.random$ara1 %>%
                    `exp(beta)`=round(exp(mean),2),
                    `0.025quant`=round(exp(`0.025quant`),2),
                    `0.975quant`=format(round(exp(`0.975quant`),2),scientific=FALSE)) %>% 
-  dplyr::left_join(select(corr_reg,ara1,ara_name),by = join_by(ara1)) %>% 
+  dplyr::left_join(select(corr_reg_ara,ara1,ara_name),by = join_by(ara1)) %>% 
   dplyr::arrange(-`exp(beta)`) %>% 
   select(-ara1) %>% 
   column_to_rownames(var="ara_name")
@@ -227,7 +234,7 @@ nara = length(unique(ww_reg$ara1))
 ma5.4$summary.random$day1 %>% 
   bind_cols(day=rep(0:(ndays-1),nara),
             ara1=rep(1:nara,each=ndays)) %>% 
-  left_join(corr_reg,by = join_by(ara1)) %>% 
+  left_join(corr_reg_ara,by = join_by(ara1)) %>% 
   ggplot() +
   geom_hline(yintercept=1,linetype=2,alpha=.5) +
   geom_ribbon(aes(x=day,ymin=exp(`0.025quant`),ymax=exp(`0.975quant`),fill=ara_name),alpha=.5) +
@@ -275,7 +282,8 @@ if(controls$rerun_models) {
                        f(prop_under_20b,model="linear",mean.linear=0,prec.linear=.2) +
                        f(prop_over_65b,model="linear",mean.linear=0,prec.linear=.2) +
                        f(prop_non_ch_eub,model="linear",mean.linear=0,prec.linear=.2) +
-                       f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2),
+                       f(ssep3_med,model="linear",mean.linear=0,prec.linear=.2) +
+                       f(employment_factor,model="linear",mean.linear=0,prec.linear=.2),
                      data = ww_reg,
                      family = "gamma",
                      control.compute = list(waic=TRUE,config=TRUE),
@@ -294,7 +302,7 @@ ma5.5$summary.random$ara1 %>%
                    `exp(beta)`=round(exp(mean),2),
                    `0.025quant`=round(exp(`0.025quant`),2),
                    `0.975quant`=format(round(exp(`0.975quant`),2),scientific=FALSE)) %>% 
-  dplyr::left_join(select(corr_reg,ara1,ara_name),by = join_by(ara1)) %>% 
+  dplyr::left_join(select(corr_reg_ara,ara1,ara_name),by = join_by(ara1)) %>% 
   dplyr::arrange(-`exp(beta)`) %>% 
   dplyr::select(-ara1) %>% 
   dplyr::filter(!is.na(ara_name)) %>% 
@@ -304,7 +312,7 @@ nara = length(unique(ww_reg$ara1))
 ma5.5$summary.random$day1 %>% 
   bind_cols(day=rep(0:(ndays-1),nara),
             ara1=rep(1:nara,each=ndays)) %>% 
-  left_join(corr_reg,by = join_by(ara1)) %>% 
+  left_join(corr_reg_ara,by = join_by(ara1)) %>% 
   ggplot() +
   geom_hline(yintercept=1,linetype=2,alpha=.5) +
   geom_ribbon(aes(x=day,ymin=exp(`0.025quant`),ymax=exp(`0.975quant`),fill=ara_name),alpha=.5) +

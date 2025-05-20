@@ -28,7 +28,7 @@ mw_100_desc_table = function(ww, ...) {
       `Proportion of population non-Swiss`=qsum_range(prop_non_ch_eu),
       `Median of Swiss index of socio-economic position (SEP)`=qsum_range(ssep3_med),
       # `Standard deviation of Swiss index of socio-economic position (SEP)`=qsum_range(ssep3_sd),
-      # `Median employment factor`=qsum_range(employment_factor)
+      `Median employment factor`=qsum_range(employment_factor)
       )
   return(tab)
 }

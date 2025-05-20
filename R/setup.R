@@ -21,14 +21,18 @@ pacman::p_load(Hmisc,
                spdep,
                jsonlite,
                scales, 
-               units)
+               units,
+               flextable,
+               ggnewscale)
 
 # set language ----
 
 Sys.setenv(LANG = "en")
+Sys.setlocale("LC_ALL", "English")
+
 
 # source functions ----
-fili = dir(path = "R",pattern="mw_[013456789]",full.names = TRUE)
+fili = dir(path = "R",pattern="mw_[01456789]",full.names = TRUE)
 lapply(X = fili, FUN = function(x) {source(paste0(x), echo=FALSE)})
 
 # create savepoint repertory if not existing ----

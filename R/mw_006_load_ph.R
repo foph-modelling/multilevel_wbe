@@ -8,7 +8,7 @@
 mw_006_load_ph = function() {
   
   years = 2020:2023
-  pathURL = paste0("https://date.nager.at/api/v2/publicholidays/", years, "/CH")
+  pathURL = paste0("https://date.nager.at/api/v3/publicholidays/", years, "/CH")
   
   gatBankHol = function(X){
     
@@ -33,7 +33,7 @@ mw_006_load_ph = function() {
     mat$date = bankHolidaysCH$date
     
     # long format
-    data_long = gather(mat, name.col, canton, V1:V25, factor_key=TRUE)
+    data_long = gather(mat, name.col, canton, V1:V24, factor_key=TRUE)
     data_long$name.col = NULL
     data_long = data_long[complete.cases(data_long$canton),]
     data_long$hol = 1
