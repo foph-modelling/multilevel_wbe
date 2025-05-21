@@ -8,6 +8,7 @@ setwd('R')
 
 source('setup.R')
 
+
 ## select model with daily deviations from GLOBAL trend 
 model = readRDS(paste0("../",controls$savepoint,"ma5.4.2.rds"))
 
@@ -235,6 +236,8 @@ for (peri in 1:5){
 }
 
 tt_cluster_all
+
+source('mw_210_resort_clusters.R')
 av_dists_all %>% ggplot() + 
   ggbeeswarm::geom_beeswarm(aes(x =period, y=`Average distance`, color=period)) + 
   facet_wrap(~nclust)
@@ -286,7 +289,7 @@ map_all=
     axis.ticks = element_blank())
 
 
-ggsave(paste0('../plots/map_all.png'), plot = map_all)
+ggsave(paste0('../plots/map_all_1.png'), plot = map_all)
 
 map_all_strong= 
   ggplot() + 
@@ -307,7 +310,7 @@ map_all_strong=
   )
 
 
-ggsave(paste0('../plots/map_all_strong_n.png'), plot=map_all_strong, height = 15, width=12)
+ggsave(paste0('../plots/map_all_strong_n_1.png'), plot=map_all_strong, height = 15, width=12)
 
 
 
@@ -326,7 +329,7 @@ map_all_choice=
     axis.ticks = element_blank())
 
 
-ggsave(paste0('../plots/map_all_choice.png'), plot = map_all_choice)
+ggsave(paste0('../plots/map_all_choice_1.png'), plot = map_all_choice)
 
 map_all_strong_choice= 
   ggplot() + 
@@ -347,7 +350,7 @@ map_all_strong_choice=
   )
 
 
-ggsave(paste0('../plots/map_all_strong_choice.png'), plot=map_all_strong_choice, height = 15, width=12)
+ggsave(paste0('../plots/map_all_strong_choice_1.png'), plot=map_all_strong_choice, height = 15, width=12)
 
 
 #pal <- RColorBrewer::brewer.pal(8, name ="Set3")
@@ -370,7 +373,7 @@ ggsave(paste0('../plots/map_all_strong_choice.png'), plot=map_all_strong_choice,
 # charts of select clusters based on maintaining geographic structure 
 
 # relabling clusters to maintain similarity between phases 
-tt_cluster_select = data.table(tt_cluster_all %>% filter((period==1 & nclust==7) | (period==2 & nclust==3) | (period==3 & nclust==2) | (period==4 & nclust == 2) | (period == 5 & nclust==3) ) )
+tt_cluster_select = data.table(tt_cluster_all %>% filter((period==1 & nclust==7) | (period==2 & nclust==5) | (period==3 & nclust==2) | (period==4 & nclust == 2) | (period == 5 & nclust==2) ) )
 
 cluster_swaps = find_cluster_swaps(tt_cluster_select)
 tt_cluster_select[period==1, reassigned_cluster := cluster]
@@ -415,12 +418,12 @@ cluster_distance_mat_1 = unique_distances[!is.na(distance) & ((period==1 & nclus
     panel.grid = element_blank(),
   )
 
-cluster_distance_mat_2 = unique_distances[!is.na(distance) & ( (period==2 & nclust== 3)),] %>% ggplot() + 
+cluster_distance_mat_2 = unique_distances[!is.na(distance) & ( (period==2 & nclust== 5)),] %>% ggplot() + 
   geom_tile(aes(x=cluster_1, y=cluster_2, fill=distance), )+
   geom_text(aes(x=cluster_1, y=cluster_2,label = round(distance,1)), color = "white", size = 3.7) +
   scale_fill_viridis_c(guide=F, limits=c(25,0), trans='reverse')+
-  scale_y_continuous(breaks=1:4, labels=cluster_swaps[[2]][[2]][order(cluster_swaps[[1]][[2]])])+
-  scale_x_continuous(breaks=1:4, labels=cluster_swaps[[2]][[2]][order(cluster_swaps[[1]][[2]])])+
+  scale_y_continuous(breaks=1:6, labels=cluster_swaps[[2]][[2]][order(cluster_swaps[[1]][[2]])])+
+  scale_x_continuous(breaks=1:6, labels=cluster_swaps[[2]][[2]][order(cluster_swaps[[1]][[2]])])+
   ylab('Cluster')+
   xlab('Cluster')+
   ggtitle('Phase 2') + 
@@ -461,12 +464,12 @@ cluster_distance_mat_4 = unique_distances[!is.na(distance) & ( (period==4 & nclu
     panel.grid = element_blank(),
   )
 
-cluster_distance_mat_5 = unique_distances[!is.na(distance) & ((period==5 & nclust==3)),] %>% ggplot() + 
+cluster_distance_mat_5 = unique_distances[!is.na(distance) & ((period==5 & nclust==2)),] %>% ggplot() + 
   geom_tile(aes(x=cluster_1, y=cluster_2, fill=distance), )+
   geom_text(aes(x=cluster_1, y=cluster_2,label = round(distance,1)), color = "white", size = 3.7) +
   scale_fill_viridis_c(guide=F, limits=c(25,0), trans='reverse')+
-  scale_y_continuous(breaks=1:4, labels=cluster_swaps[[2]][[5]][order(cluster_swaps[[1]][[5]])])+
-  scale_x_continuous(breaks=1:4, labels=cluster_swaps[[2]][[5]][order(cluster_swaps[[1]][[5]])])+
+  scale_y_continuous(breaks=1:3, labels=cluster_swaps[[2]][[5]][order(cluster_swaps[[1]][[5]])])+
+  scale_x_continuous(breaks=1:3, labels=cluster_swaps[[2]][[5]][order(cluster_swaps[[1]][[5]])])+
   facet_wrap(~period, nrow=1, scale='free') + 
   ylab('Cluster')+
   xlab('Cluster')+
@@ -478,15 +481,15 @@ cluster_distance_mat_5 = unique_distances[!is.na(distance) & ((period==5 & nclus
 
 centroid_dist_plot = cluster_distance_mat_1 + cluster_distance_mat_2 + cluster_distance_mat_3 + cluster_distance_mat_4 + cluster_distance_mat_5 + plot_layout(design = 'abcde')
 
-ggsave(filename = '../plots/centroid_dist_plot.pdf', centroid_dist_plot, width=15, height=4)
+ggsave(filename = '../plots/centroid_dist_plot_1.pdf', centroid_dist_plot, width=15, height=4)
 
 joint_plot = map_all/cluster_distance_mat + plot_layout(heights=c(5,2))
 
-ggsave(paste0('../plots/map_all_distances.png'), width=20, height=10, plot = joint_plot)
+ggsave(paste0('../plots/map_all_distances_1.png'), width=20, height=10, plot = joint_plot)
 
 joint_plot_sc = map_all_strong/cluster_distance_mat + plot_layout(heights=c(5,2))
 
-ggsave(paste0('../plots/map_all_distances_sc.png'), width=20, height=10, plot = joint_plot_sc)
+ggsave(paste0('../plots/map_all_distances_sc_1.png'), width=20, height=10, plot = joint_plot_sc)
 
 joint_plot_all = map_all/map_all_strong/cluster_distance_mat + plot_layout(heights=c(4,4,3), guides = "collect") & theme(legend.position = 'bottom')
 ggsave(paste0('../plots/map_all_distances_all_m.png'), width=12, height=8, plot = joint_plot_all)
@@ -509,15 +512,15 @@ g_clust = tt_cluster_all %>% filter(nclust %in% 2:7 ) %>%
   labs(title=paste0("Clusters"),x="Day",y="Relative viral load by ARA") + 
   theme(axis.text.x = element_text(angle=90,hjust=1))
 
-png(filename = '../plots/all_series.png', width = 40, heigh=12, units='cm', res = 300) # open the file
+png(filename = '../plots/all_series_1.png', width = 40, heigh=12, units='cm', res = 300) # open the file
 g_clust
 dev.off() # close the file
 
 
-g_clust_png <- image_read('../plots/all_series.png')
+g_clust_png <- image_read('../plots/all_series_1.png')
 
 # rotate
-image_rotate(g_clust_png, 90) %>% image_write('../plots/all_series_rot.png')
+image_rotate(g_clust_png, 90) %>% image_write('../plots/all_series_rot_1.png')
 
 
 
@@ -566,12 +569,14 @@ for (peri in 1:5){
 tt_cluster_select[, cluster:=reassigned_cluster]
 tt_cluster_sf_select = merge(shapes$ara_shp, unique(tt_cluster_select[,c('ara_id', 'ara_name', 'cluster', 'strong_clust', 'period', 'nclust')]), by=c('ara_id'))
 
-
+av_cluster_strength = av_dists_all[((period==1 & nclust==7) | (period==2 & nclust==5) | (period == 3 & nclust==2) | (period == 4 & nclust==2) | (period == 5 & nclust==2))]
 av_cluster_strength[period==1, reassigned_cluster := cluster]
 for(peri in 2:5){
   for(clust in 1:length(cluster_swaps[[1]][[peri]]))
     av_cluster_strength[period==peri & cluster==cluster_swaps[[1]][[peri]][[clust]], reassigned_cluster := cluster_swaps[[2]][[peri]][[clust]]]
 }
+
+
 
 av_cluster_strength = av_cluster_strength[, Cluster:=as.integer(reassigned_cluster)][, -c('reassigned_cluster')]
 av_cluster_strength = av_cluster_strength[, Phase:=period][, -c('reassigned_cluster')]
@@ -605,7 +610,7 @@ mixed_map = tt_cluster_sf_select %>% filter(period %in% c(1,2,5) ) %>% ggplot() 
     axis.ticks = element_blank()
   )
   
-ggsave(paste0('../plots/map_mixed_clustsize.png'), width=20, height=10, plot = mixed_map)
+ggsave(paste0('../plots/map_mixed_clustsize_1.png'), width=20, height=10, plot = mixed_map)
 
 names_clusters = paste0('Cluster ', 1:10 )
 names(names_clusters) = 1:10
@@ -628,7 +633,7 @@ gclust_1= tt_cluster_select %>% filter((period==1 & nclust==7) ) %>% #| (period=
   
 
 
-gclust_2 = tt_cluster_select %>% filter((period==2 & nclust==3)) %>% #| (period==2 & nclust==5) | (period == 5 & nclust==3) ) %>% 
+gclust_2 = tt_cluster_select %>% filter((period==2 & nclust==5)) %>% #| (period==2 & nclust==5) | (period == 5 & nclust==3) ) %>% 
   ggplot() +
   geom_hline(yintercept=1,linetype=2,alpha=.5) +
   #geom_ribbon(aes(x=date,ymin=exp(`0.025quant`),ymax=exp(`0.975quant`),fill=NUTS2_name),alpha=.5) +
@@ -643,7 +648,7 @@ gclust_2 = tt_cluster_select %>% filter((period==2 & nclust==3)) %>% #| (period=
   theme_minimal() +
   theme(axis.text.x = element_text(angle=45,hjust=1, size=8)) 
 
-gclust_5 = tt_cluster_select %>% filter((period == 5 & nclust==3)) %>% #| (period==2 & nclust==5) | (period == 5 & nclust==3) ) %>% 
+gclust_5 = tt_cluster_select %>% filter((period == 5 & nclust==2)) %>% #| (period==2 & nclust==5) | (period == 5 & nclust==3) ) %>% 
   ggplot() +
   geom_hline(yintercept=1,linetype=2,alpha=.5) +
   #geom_ribbon(aes(x=date,ymin=exp(`0.025quant`),ymax=exp(`0.975quant`),fill=NUTS2_name),alpha=.5) +
@@ -660,8 +665,8 @@ gclust_5 = tt_cluster_select %>% filter((period == 5 & nclust==3)) %>% #| (perio
 
 
 
-saveRDS(object = tt_cluster_sf_all, file = '../outputs/tt_cluster_sf_all.rds')
-
+saveRDS(object = tt_cluster_sf_all, file = '../outputs/tt_cluster_sf_all_1.rds')
+library(ggsankey)
 library(ggsankeyfier)
 
 
@@ -673,6 +678,10 @@ clust_select_wide = dcast(unique(tt_cluster_select[, c('period', 'ara_name', 'cl
 colnames(clust_select_wide) = c('ara_name', paste0('Phase ', 1:5))
 
 flow_df = clust_select_wide %>% make_long(`Phase 1`,  `Phase 2`,  `Phase 3`,  `Phase 4`, `Phase 5`)
+
+flow_df$x <- factor(flow_df$x, levels = rev(unique(flow_df$x)))
+flow_df$next_x <- factor(flow_df$next_x, levels = rev(unique(flow_df$next_x)))
+
 
 sankeyflow = ggplot(flow_df %>% filter(!is.na(node)),  aes(x = x, 
                     next_x = next_x, 
@@ -686,10 +695,14 @@ sankeyflow = ggplot(flow_df %>% filter(!is.na(node)),  aes(x = x,
   ggtitle('E') +
   scale_fill_manual(name='Cluster',  values = paletteer_d("ggthemes::hc_darkunica")) +
   theme_sankey(base_size = 6) + 
-  xlab('') + 
+  ylab('') + 
+  xlab('') +
+  
+  coord_flip() +
   theme(legend.position = 'none', 
         plot.margin=margin(0,0,0,0),
-        axis.text.x = element_text(angle=45,hjust=1, size=8), 
+        axis.text.y = element_text(angle=45,hjust=1, size=8), 
+        axis.text.x = element_blank(),
         title = element_text(size=12))
 
 
@@ -759,17 +772,74 @@ layout=
 aaaaaa
 aaaaaa
 aaaaaa
+eeeeee
+eeeeee
+eeeeee
+eeeeee
+eeeeee
 bbccdd
 bbccdd
-bbccdd
-bbeeee
-bbeeee
-bbeeee
+bbccff
+bbccgg
+bbhhhh
+bbhhhh
 "
 
 
-mixed_map_series = mixed_map + gclust_1 + gclust_2 + gclust_5 + sankeyflow + plot_layout(design=layout, guides = 'collect')
+mixed_map_series = mixed_map + (gclust_1  + theme(legend.position = 'none')) + (gclust_2 + theme(legend.position = 'none')) + gclust_5 + sankeyflow  + plot_layout(design=layout)
 
-ggsave(paste0('../plots/map_series_mixed_clustsize.png'), width=10, height=9, plot = mixed_map_series)
-ggsave(paste0('../plots/map_series_mixed_clustsize.pdf'), width=10, height=9, plot = mixed_map_series)
+ggsave(paste0('../plots/map_series_mixed_clustsize_1.png'), width=10, height=12, plot = mixed_map_series)
+ggsave(paste0('../plots/map_series_mixed_clustsize_1.pdf'), width=10, height=12, plot = mixed_map_series)
 
+
+layout=
+  "
+aaaaaa
+aaaaaa
+bbccdd
+bbccdd
+bbccee
+bbhhee
+"
+
+
+mixed_map_series = mixed_map + (gclust_1  + theme(legend.position = 'none')) + (gclust_2 + theme(legend.position = 'none')) + gclust_5 + sankeyflow  + plot_layout(design=layout)
+
+ggsave(paste0('../plots/map_series_mixed_clustsize_1.png'), width=10, height=9, plot = mixed_map_series)
+ggsave(paste0('../plots/map_series_mixed_clustsize_1.pdf'), width=10, height=9, plot = mixed_map_series)
+
+
+
+layout=
+  "
+aaaaaaee
+aaaaaaee
+aaaaaaee
+aaaaaaee
+aaaaaaee
+aaaaaaee
+aaaaaaee
+aaaaaaee
+bbccddee
+bbccddee
+bbccddee
+bbccddee
+bbccddee
+bbccddee
+bbccddee
+bbccggee
+bbffggee
+bbffggee
+"
+
+
+mixed_map_series = 
+  (mixed_map + theme(legend.position = 'left')) + 
+  (gclust_1  + guides(color = guide_legend(ncol = 1)) + theme(legend.position = 'left', legend.direction = 'vertical')) + 
+  (gclust_2 + theme(legend.position = 'none'))+ 
+  (gclust_5 + theme(legend.position = 'none')) + 
+  sankeyflow  + 
+  plot_layout(design=layout)
+
+ggsave(paste0('../plots/map_series_mixed_clustsize_1.png'), width=12, height=7, plot = mixed_map_series)
+ggsave(paste0('../plots/map_series_mixed_clustsize_1.pdf'), width=12, height=7, plot = mixed_map_series)

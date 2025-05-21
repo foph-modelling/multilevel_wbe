@@ -27,11 +27,13 @@
    colors_to_use <- colors_to_use[order.dendrogram(dend)]
    colors_to_use
    
-   #pdf(paste0('../plots/dendogram_',peri,'.pdf'), width = 20, height=10 )
    # Now we can use them
    dendextend::labels_colors(dend) <- colors_to_use
    #dendextend::leaves_colors(dend) <- colors_to_use
    plot(dend)
+   
+   pdf(paste0('../plots/dendogram_',peri,'.pdf'), width = 20, height=10 )
+   
    
 print(paste0("*Figure ", peri, ".* Dendogram of period ", peri))
    

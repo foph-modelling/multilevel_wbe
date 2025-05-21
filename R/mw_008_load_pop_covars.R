@@ -127,7 +127,7 @@ mw_008_load_pop_covars = function(scale='ARA') {
     # catch_pop_cov = catchement_population_covariates
     #write.csv(catch_emp_data_dt_summed, 'data/catchement_employment_covariates.csv')
     
-    return(catch_pop_cov)
+    #return(catch_pop_cov)
     
   } else if(scale == 'PLZ') {
     
